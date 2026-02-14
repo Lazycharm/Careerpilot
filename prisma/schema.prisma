@@ -1,0 +1,228 @@
+// Prisma schema for Career Platform
+// Database: Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum ResumeStatus {
+  draft
+  completed
+}
+
+enum InterviewStatus {
+  in_progress
+  completed
+}
+
+enum QuestionType {
+  general
+  technical
+  behavioral
+}
+
+enum DownloadType {
+  resume
+  cover_letter
+}
+
+enum SubscriptionStatus {
+  active
+  expired
+  cancelled
+  past_due
+}
+
+enum PlanType {
+  free
+  pay_per_download
+  pro
+  business
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          UserRole  @default(user)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  profile       UserProfile?
+  resumes       Resume[]
+  coverLetters  CoverLetter[]
+  interviews    InterviewSession[]
+  downloads     Download[]
+  subscriptions Subscription[]
+  aiUsage       AIUsage[]
+  settings      Setting[] @relation("SettingsUpdatedBy")
+}
+
+model UserProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  phone           String?
+  location        String?
+  industry        String?
+  experienceLevel String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Resume {
+  id         String       @id @default(uuid())
+  userId     String
+  templateId String
+  title      String
+  data       Json         // Stores all resume sections (personal info, experience, skills, etc.)
+  status     ResumeStatus @default(draft)
+  wordCount  Int          @default(0)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template   ResumeTemplate @relation(fields: [templateId], references: [id])
+  downloads  Download[]
+}
+
+model ResumeTemplate {
+  id           String   @id @default(uuid())
+  name         String
+  previewImage String?
+  isActive     Boolean  @default(true)
+  supportsPhoto Boolean @default(false) // Whether template supports profile photo
+  isPremium    Boolean  @default(false)  // Premium template flag
+  category     String?  // e.g., "modern", "classic", "uae-specific"
+  metadata     Json?    // Additional template metadata (colors, fonts, etc.)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  resumes      Resume[]
+}
+
+model CoverLetter {
+  id          String   @id @default(uuid())
+  userId      String
+  jobTitle    String
+  industry    String
+  content     String   @db.Text
+  aiGenerated Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model InterviewSession {
+  id              String           @id @default(uuid())
+  userId          String
+  jobTitle        String
+  industry        String
+  experienceLevel String
+  status          InterviewStatus @default(in_progress)
+  readinessScore  Int?
+  strengths       String?         @db.Text
+  weaknesses      String?         @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions InterviewQuestion[]
+}
+
+model InterviewQuestion {
+  id          String       @id @default(uuid())
+  sessionId   String
+  question    String       @db.Text
+  type        QuestionType
+  aiGenerated Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  answer  InterviewAnswer?
+}
+
+model InterviewAnswer {
+  id          String   @id @default(uuid())
+  questionId  String   @unique
+  answer      String   @db.Text
+  score       Int?
+  feedback    String?  @db.Text
+  aiAnalyzed  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  question InterviewQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Download {
+  id        String       @id @default(uuid())
+  userId    String
+  resumeId  String?
+  type      DownloadType
+  paid      Boolean      @default(false)
+  createdAt DateTime     @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+}
+
+model Subscription {
+  id                    String             @id @default(uuid())
+  userId                String
+  status                SubscriptionStatus @default(active)
+  planType              PlanType          @default(free)
+  ziinaOrderId          String?            // Ziina payment order ID
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean           @default(false)
+  startDate             DateTime           @default(now())
+  endDate               DateTime?
+  paymentMethod         String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AIUsage {
+  id                   String   @id @default(uuid())
+  userId               String
+  month                Int      // 1-12
+  year                 Int
+  resumesGenerated     Int      @default(0)
+  coverLettersGenerated Int     @default(0)
+  interviewGenerated   Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, year])
+}
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   // JSON or String value
+  description String?
+  updatedBy   String
+  updatedAt   DateTime @default(now())
+
+  updatedByUser User @relation("SettingsUpdatedBy", fields: [updatedBy], references: [id])
+}
+

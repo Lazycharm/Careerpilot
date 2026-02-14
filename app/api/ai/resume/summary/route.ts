@@ -1,0 +1,56 @@
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { getSettingAsBoolean } from '@/lib/settings'
+import { generateProfessionalSummary } from '@/lib/ai/resumeAssistant'
+import { checkAILimit, incrementAIUsage, AI_LIMIT_EXCEEDED_MESSAGE } from '@/lib/aiUsage'
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    await checkAILimit(session.user.id, 'resume')
+
+    const aiEnabled = await getSettingAsBoolean('ai_features_enabled', true)
+    const resumeAIEnabled = await getSettingAsBoolean('resume_ai_enabled', true)
+    
+    if (!aiEnabled || !resumeAIEnabled) {
+      return NextResponse.json(
+        { error: 'AI resume features are currently disabled' },
+        { status: 403 }
+      )
+    }
+
+    const body = await request.json()
+    const { jobTitle, industry, yearsOfExperience, currentRole, keySkills } = body
+
+    const summary = await generateProfessionalSummary({
+      jobTitle,
+      industry,
+      yearsOfExperience,
+      currentRole,
+      keySkills,
+    })
+
+    await incrementAIUsage(session.user.id, 'resume')
+
+    return NextResponse.json({ summary })
+  } catch (error: any) {
+    console.error('Summary generation error:', error)
+    if (error.message === AI_LIMIT_EXCEEDED_MESSAGE) {
+      return NextResponse.json({ error: AI_LIMIT_EXCEEDED_MESSAGE }, { status: 403 })
+    }
+    return NextResponse.json(
+      { error: error.message || 'Failed to generate summary' },
+      { status: 500 }
+    )
+  }
+}
+
