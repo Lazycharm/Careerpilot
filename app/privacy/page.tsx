@@ -63,7 +63,7 @@ export default function PrivacyPage() {
               <CardContent className="p-6 sm:p-8">
                 <h2 className="text-xl sm:text-2xl font-bold mb-4">1. Introduction</h2>
                 <p className="text-gray-700 text-sm sm:text-base leading-relaxed mb-4">
-                  Career Pilot ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI-powered resume builder and career preparation platform.
+                  Career Pilot (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI-powered resume builder and career preparation platform.
                 </p>
                 <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
                   By using Career Pilot, you agree to the collection and use of information in accordance with this policy.

@@ -147,7 +147,7 @@ export default function ProductsPage() {
               </div>
               <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4">More Solutions Coming Soon</h3>
               <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto">
-                As Axix Minds continues to grow, we're building more tools that solve real problems, support underserved communities, and create meaningful impact.
+                As Axix Minds continues to grow, we&apos;re building more tools that solve real problems, support underserved communities, and create meaningful impact.
               </p>
             </CardContent>
           </Card>

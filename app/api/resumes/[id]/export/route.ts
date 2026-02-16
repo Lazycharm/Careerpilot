@@ -60,6 +60,7 @@ export async function GET(
           },
           { status: 403 }
         )
+      }
       await prisma.download.update({
         where: { id: credit.id },
         data: { resumeId: resume.id },
@@ -124,7 +125,7 @@ export async function GET(
     try {
       const puppeteer = await import('puppeteer')
       const browser = await puppeteer.launch({
-        headless: 'new',
+        headless: true,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -474,7 +475,7 @@ export async function GET(
         ? `${resume.title || 'resume'}-professional.pdf`
         : `${resume.title || 'resume'}-web.pdf`
       
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(Buffer.from(pdfBuffer), {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="${filename}"`,

@@ -162,7 +162,7 @@ export default function HelpPage() {
           <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-6 sm:p-8 text-center">
               <p className="text-gray-700 text-sm sm:text-base mb-4">
-                Can't find what you're looking for? Our support team is here to help.
+                Can&apos;t find what you&apos;re looking for? Our support team is here to help.
               </p>
               <Link href="/contact">
                 <Button size="lg" className="min-h-[48px]">

@@ -1218,7 +1218,7 @@ export default function ResumeEditorPage() {
                 ))}
                 {data.skills.length === 0 && (
                   <p className="text-sm text-gray-500 text-center py-4">
-                    No skills added yet. Click "Suggest Skills" to get AI suggestions.
+                    No skills added yet. Click &quot;Suggest Skills&quot; to get AI suggestions.
                   </p>
                 )}
               </CardContent>

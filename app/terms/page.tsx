@@ -155,7 +155,7 @@ export default function TermsPage() {
               <CardContent className="p-6 sm:p-8">
                 <h2 className="text-xl sm:text-2xl font-bold mb-4">7. Disclaimer</h2>
                 <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
-                  Career Pilot is provided "as is" without warranties of any kind. We do not guarantee that our services will be uninterrupted, error-free, or meet your specific requirements. We are not responsible for the accuracy of AI-generated content or job application outcomes.
+                  Career Pilot is provided &quot;as is&quot; without warranties of any kind. We do not guarantee that our services will be uninterrupted, error-free, or meet your specific requirements. We are not responsible for the accuracy of AI-generated content or job application outcomes.
                 </p>
               </CardContent>
             </Card>

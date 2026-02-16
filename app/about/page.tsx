@@ -80,7 +80,7 @@ export default function AboutPage() {
                   Our mission is simple: build smart, accessible solutions that help people move forward professionally, financially, and socially.
                 </p>
                 <p className="text-gray-700 leading-relaxed font-semibold text-sm sm:text-base">
-                  We don't build technology for hype.<br />
+                  We don&apos;t build technology for hype.<br />
                   We build it to work.
                 </p>
               </div>
@@ -93,7 +93,7 @@ export default function AboutPage() {
               <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Why We Built CareerPilot</h2>
               <div className="prose prose-sm sm:prose-base max-w-none">
                 <p className="text-gray-700 leading-relaxed mb-4 text-sm sm:text-base">
-                  Finding the right job shouldn't feel overwhelming.
+                  Finding the right job shouldn&apos;t feel overwhelming.
                 </p>
                 <p className="text-gray-700 leading-relaxed mb-4 text-sm sm:text-base">
                   Many talented people struggle not because they lack skills, but because they lack proper resumes, interview preparation, access to modern tools, and guidance tailored to their job market.
@@ -173,7 +173,7 @@ export default function AboutPage() {
                   CareerPilot is still growing  and this is only the beginning.
                 </p>
                 <p className="text-gray-700 leading-relaxed mb-6 text-sm sm:text-base">
-                  Whether you're a job seeker, a professional, or a partner, we're excited to build the future together.
+                  Whether you&apos;re a job seeker, a professional, or a partner, we&apos;re excited to build the future together.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link href="/auth/register">

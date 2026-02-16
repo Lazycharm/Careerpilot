@@ -54,7 +54,7 @@ export default function ContactPage() {
               Contact Us
             </h1>
             <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
-              Get in touch with our support team. We're here to help with any questions or issues.
+              Get in touch with our support team. We&apos;re here to help with any questions or issues.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function ContactPage() {
                 </div>
                 <CardTitle className="text-xl sm:text-2xl">Email Support</CardTitle>
                 <CardDescription className="text-sm sm:text-base">
-                  Send us an email and we'll get back to you
+                  Send us an email and we&apos;ll get back to you
                 </CardDescription>
               </CardHeader>
               <CardContent>

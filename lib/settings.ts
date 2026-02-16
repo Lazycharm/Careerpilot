@@ -32,8 +32,8 @@ export async function getSettingAsNumber(key: string): Promise<number> {
 export async function setSetting(
   key: string,
   value: string,
-  description?: string,
-  updatedBy: string
+  updatedBy: string,
+  description?: string
 ): Promise<void> {
   await prisma.setting.upsert({
     where: { key },
