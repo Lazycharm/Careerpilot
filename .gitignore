@@ -38,3 +38,7 @@ next-env.d.ts
 # prisma
 /prisma/migrations
 
+# secrets
+open ai.txt
+*.txt
+!README.txt
