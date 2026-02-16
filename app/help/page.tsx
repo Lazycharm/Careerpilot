@@ -60,43 +60,43 @@ export default function HelpPage() {
 
           {/* Quick Links */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = '/help/faqs'}>
-              <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <HelpCircle className="w-6 h-6 text-blue-600" />
-                </div>
-                <CardTitle className="text-lg sm:text-xl">Frequently Asked Questions</CardTitle>
-                <CardDescription className="text-sm">
-                  Browse common questions and answers
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/help/faqs">
+            <Link href="/help/faqs" className="block">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                <CardHeader>
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                    <HelpCircle className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <CardTitle className="text-lg sm:text-xl">Frequently Asked Questions</CardTitle>
+                  <CardDescription className="text-sm">
+                    Browse common questions and answers
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <Button variant="outline" className="w-full min-h-[44px]">
                     View FAQs
                   </Button>
-                </Link>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = '/contact'}>
-              <CardHeader>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                  <MessageSquare className="w-6 h-6 text-purple-600" />
-                </div>
-                <CardTitle className="text-lg sm:text-xl">Contact Support</CardTitle>
-                <CardDescription className="text-sm">
-                  Get in touch with our support team
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/contact">
+            <Link href="/contact" className="block">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                <CardHeader>
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                    <MessageSquare className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <CardTitle className="text-lg sm:text-xl">Contact Support</CardTitle>
+                  <CardDescription className="text-sm">
+                    Get in touch with our support team
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <Button variant="outline" className="w-full min-h-[44px]">
                     Contact Us
                   </Button>
-                </Link>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
 
           {/* Help Categories */}
