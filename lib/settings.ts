@@ -72,8 +72,8 @@ export async function initializeDefaultSettings(adminUserId: string): Promise<vo
     await setSetting(
       setting.key,
       setting.value,
-      setting.description,
-      adminUserId
+      adminUserId,
+      setting.description
     )
   }
 }

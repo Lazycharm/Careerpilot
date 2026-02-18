@@ -85,6 +85,11 @@ ADMIN_EMAIL="your@email.com" ADMIN_PASSWORD="yourpassword" npm run setup
 2. Manually update role to `admin` in database
 3. Or use Prisma Studio to change role
 
+### Local vs production (admin login)
+- **Production** uses the database configured in Netlify (or your host) env vars.
+- **Local** uses the database in your `.env` / `.env.local` (e.g. a different DB or Supabase project).
+- If admin login works on the live site but not locally, your local app is using a different database where that admin user does not exist. Create an admin locally with the setup script: `ADMIN_EMAIL="you@example.com" ADMIN_PASSWORD="yourpassword" npm run setup`
+
 ## Initial Configuration
 
 After logging in as admin:

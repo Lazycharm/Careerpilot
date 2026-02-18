@@ -233,8 +233,8 @@ function getBaseStyles(): string {
     .resume-header {
       display: flex;
       align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
       border-bottom: 2px solid #333;
     }
     
@@ -257,7 +257,7 @@ function getBaseStyles(): string {
     .resume-name {
       font-size: 18pt;
       font-weight: bold;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       color: #1a1a1a;
     }
     
@@ -297,22 +297,22 @@ function getBaseStyles(): string {
     }
     
     .resume-section {
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
     
     .section-title {
       font-size: 14pt;
       font-weight: bold;
-      margin-bottom: 10px;
-      padding-bottom: 5px;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
       border-bottom: 1px solid #ccc;
       color: #1a1a1a;
     }
     
     .section-content {
       text-align: justify;
-      line-height: 1.6;
-      margin-top: 8px;
+      line-height: 1.5;
+      margin-top: 4px;
       margin-bottom: 0;
       padding: 0;
       white-space: pre-wrap;
@@ -322,11 +322,11 @@ function getBaseStyles(): string {
     .experience-item,
     .education-item,
     .certification-item {
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
     
     .experience-header {
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     
     .experience-position {
@@ -350,15 +350,15 @@ function getBaseStyles(): string {
     }
     
     .resume-preview-container .experience-bullets {
-      margin: 8px 0 8px 20px !important;
+      margin: 6px 0 6px 20px !important;
       padding-left: 20px !important;
       list-style-type: disc !important;
       list-style-position: outside !important;
     }
     
     .resume-preview-container .experience-bullets li {
-      margin-bottom: 6px;
-      line-height: 1.6;
+      margin-bottom: 4px;
+      line-height: 1.45;
       padding-left: 4px;
       text-align: left;
       display: list-item !important;
@@ -405,12 +405,12 @@ function getBaseStyles(): string {
     }
     
     .skills-group {
-      margin-bottom: 15px;
+      margin-bottom: 6px;
     }
     
     .skills-category {
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       color: #333;
       font-size: 11pt;
     }
@@ -418,8 +418,8 @@ function getBaseStyles(): string {
     .resume-preview-container .skills-list {
       display: grid !important;
       grid-template-columns: repeat(2, 1fr) !important;
-      column-gap: 30px;
-      row-gap: 6px;
+      column-gap: 24px;
+      row-gap: 2px;
       margin: 0 0 0 20px !important;
       padding-left: 20px !important;
       list-style-type: disc !important;
@@ -427,8 +427,8 @@ function getBaseStyles(): string {
     }
     
     .resume-preview-container .skills-item {
-      margin-bottom: 4px;
-      line-height: 1.5;
+      margin-bottom: 2px;
+      line-height: 1.4;
       padding-left: 4px;
       color: #333;
       display: list-item !important;

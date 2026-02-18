@@ -205,7 +205,7 @@ function getBaseStyles(): string {
       width: 8.5in;
       max-width: 8.5in;
       margin: 0 auto;
-      padding: 0.5in;
+      padding: 0.4in;
       background: #fff;
       min-height: 11in;
       word-wrap: break-word;
@@ -222,8 +222,8 @@ function getBaseStyles(): string {
       flex-direction: row;
       align-items: center;
       text-align: left;
-      margin-bottom: 25px;
-      padding-bottom: 20px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
       border-bottom: 2px solid #333;
     }
     
@@ -250,7 +250,7 @@ function getBaseStyles(): string {
     .resume-name {
       font-size: 24pt;
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
       color: #1a1a1a;
       line-height: 1.2;
     }
@@ -277,7 +277,7 @@ function getBaseStyles(): string {
     }
     
     .resume-section {
-      margin-bottom: 22px;
+      margin-bottom: 12px;
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -285,9 +285,9 @@ function getBaseStyles(): string {
     .section-title {
       font-size: 14pt;
       font-weight: bold;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
       margin-top: 0;
-      padding-bottom: 6px;
+      padding-bottom: 4px;
       border-bottom: 2px solid #667eea;
       color: #667eea;
       text-transform: uppercase;
@@ -296,8 +296,8 @@ function getBaseStyles(): string {
     
     .section-content {
       text-align: left;
-      line-height: 1.6;
-      margin-top: 8px;
+      line-height: 1.5;
+      margin-top: 4px;
       margin-bottom: 0;
       padding: 0;
       white-space: normal;
@@ -316,13 +316,13 @@ function getBaseStyles(): string {
     .experience-item,
     .education-item,
     .certification-item {
-      margin-bottom: 18px;
+      margin-bottom: 10px;
       page-break-inside: avoid;
       break-inside: avoid;
     }
     
     .experience-header {
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
     
     .experience-position {
@@ -349,15 +349,15 @@ function getBaseStyles(): string {
     }
     
     .experience-bullets {
-      margin: 10px 0 10px 0;
+      margin: 6px 0 6px 0;
       padding-left: 25px;
       list-style-type: disc;
       list-style-position: outside;
     }
     
     .experience-bullets li {
-      margin-bottom: 8px;
-      line-height: 1.6;
+      margin-bottom: 4px;
+      line-height: 1.45;
       padding-left: 6px;
       text-align: left;
       display: list-item;
@@ -415,12 +415,12 @@ function getBaseStyles(): string {
     }
     
     .skills-group {
-      margin-bottom: 15px;
+      margin-bottom: 6px;
     }
     
     .skills-category {
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       color: #333;
       font-size: 11pt;
     }
@@ -432,8 +432,8 @@ function getBaseStyles(): string {
     .skills-list {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      column-gap: 30px;
-      row-gap: 8px;
+      column-gap: 24px;
+      row-gap: 2px;
       margin: 0 0 0 20px;
       padding-left: 20px;
       list-style-type: disc;
@@ -441,8 +441,8 @@ function getBaseStyles(): string {
     }
     
     .skills-item {
-      margin-bottom: 6px;
-      line-height: 1.5;
+      margin-bottom: 2px;
+      line-height: 1.4;
       padding-left: 4px;
       color: #333;
       display: list-item;

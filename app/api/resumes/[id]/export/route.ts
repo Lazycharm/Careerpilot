@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPlanType } from '@/lib/subscription'
+import { getSettingAsBoolean } from '@/lib/settings'
 
 export async function GET(
   request: Request,
@@ -34,48 +35,54 @@ export async function GET(
       )
     }
 
-    const planType = await getPlanType(session.user.id)
+    const subscriptionEnabled = await getSettingAsBoolean('subscription_enabled', false)
+    const freeDownloadsEnabled = await getSettingAsBoolean('free_downloads_enabled', false)
+    const skipPlanCheck = !subscriptionEnabled || freeDownloadsEnabled
 
-    if (planType === 'free') {
-      return NextResponse.json(
-        { error: 'Download requires a paid plan. Upgrade to download PDFs.' },
-        { status: 403 }
-      )
-    }
+    if (!skipPlanCheck) {
+      const planType = await getPlanType(session.user.id)
 
-    if (planType === 'pay_per_download') {
-      const credit = await prisma.download.findFirst({
-        where: {
-          userId: session.user.id,
-          type: 'resume',
-          paid: true,
-          resumeId: null,
-        },
-      })
-      if (!credit) {
+      if (planType === 'free') {
         return NextResponse.json(
-          {
-            error: 'No download credit. Purchase a download to continue.',
-            requiresPayment: true,
-          },
+          { error: 'Download requires a paid plan. Upgrade to download PDFs.' },
           { status: 403 }
         )
       }
-      await prisma.download.update({
-        where: { id: credit.id },
-        data: { resumeId: resume.id },
-      })
-    }
 
-    if (planType === 'pro' || planType === 'business') {
-      await prisma.download.create({
-        data: {
-          userId: session.user.id,
-          resumeId: resume.id,
-          type: 'resume',
-          paid: true,
-        },
-      })
+      if (planType === 'pay_per_download') {
+        const credit = await prisma.download.findFirst({
+          where: {
+            userId: session.user.id,
+            type: 'resume',
+            paid: true,
+            resumeId: null,
+          },
+        })
+        if (!credit) {
+          return NextResponse.json(
+            {
+              error: 'No download credit. Purchase a download to continue.',
+              requiresPayment: true,
+            },
+            { status: 403 }
+          )
+        }
+        await prisma.download.update({
+          where: { id: credit.id },
+          data: { resumeId: resume.id },
+        })
+      }
+
+      if (planType === 'pro' || planType === 'business') {
+        await prisma.download.create({
+          data: {
+            userId: session.user.id,
+            resumeId: resume.id,
+            type: 'resume',
+            paid: true,
+          },
+        })
+      }
     }
 
     // Get template
@@ -166,7 +173,7 @@ export async function GET(
               height: auto !important;
             }
             .resume-container {
-              padding: 0.5in !important;
+              padding: 0.4in !important;
               overflow: visible !important;
               height: auto !important;
               min-height: auto !important;
@@ -178,7 +185,7 @@ export async function GET(
               display: block !important;
               visibility: visible !important;
               opacity: 1 !important;
-              margin-bottom: 22px !important;
+              margin-bottom: 12px !important;
             }
             .section-title {
               page-break-after: avoid;
@@ -208,12 +215,20 @@ export async function GET(
               page-break-before: avoid;
               break-before: avoid;
             }
-            .experience-bullets,
-            .skills-list {
+            .experience-bullets {
               display: block !important;
               visibility: visible !important;
             }
-            .experience-bullets li,
+            .experience-bullets li {
+              display: list-item !important;
+              visibility: visible !important;
+            }
+            /* Keep skills as two-column grid to match preview */
+            .skills-list {
+              display: grid !important;
+              grid-template-columns: repeat(2, 1fr) !important;
+              visibility: visible !important;
+            }
             .skills-item {
               display: list-item !important;
               visibility: visible !important;
@@ -278,14 +293,14 @@ export async function GET(
               page-break-inside: avoid !important;
               overflow: visible !important;
               margin: 0 !important;
-              padding: 0.5in !important;
+              padding: 0.4in !important;
             }
-            /* Ensure all sections are visible */
+            /* Ensure all sections are visible, tight spacing for one page */
             .resume-section {
               display: block !important;
               visibility: visible !important;
               opacity: 1 !important;
-              margin-bottom: 22px !important;
+              margin-bottom: 12px !important;
             }
             .section-title {
               display: block !important;
@@ -301,12 +316,20 @@ export async function GET(
               display: block !important;
               visibility: visible !important;
             }
-            .experience-bullets,
-            .skills-list {
+            .experience-bullets {
               display: block !important;
               visibility: visible !important;
             }
-            .experience-bullets li,
+            .experience-bullets li {
+              display: list-item !important;
+              visibility: visible !important;
+            }
+            /* Keep skills as two-column grid to match preview */
+            .skills-list {
+              display: grid !important;
+              grid-template-columns: repeat(2, 1fr) !important;
+              visibility: visible !important;
+            }
             .skills-item {
               display: list-item !important;
               visibility: visible !important;

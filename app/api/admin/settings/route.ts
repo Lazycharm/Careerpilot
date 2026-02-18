@@ -50,13 +50,13 @@ export async function PUT(request: Request) {
       )
     }
 
-    // Update all settings
+    // Update all settings (setSetting: key, value, updatedBy, description?)
     for (const setting of settings) {
       await setSetting(
         setting.key,
         setting.value,
-        setting.description,
-        session.user.id
+        session.user.id,
+        setting.description
       )
     }
 
