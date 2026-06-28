@@ -28,19 +28,27 @@ export function ResumePreview({ data, templateKey, supportsPhoto = false }: Resu
     const existing = document.getElementById('template-styles')
     if (existing) existing.remove()
 
-    // Add base styles + template styles
+    // Merge customization with defaults
+    const customization = { ...defaultCustomization, ...data.customization }
+    const customizationCSS = generateCustomizationCSS(customization)
+
+    // Add base styles + template styles + customization overrides
     styleElement.textContent = `
       ${getBaseStyles()}
       ${templateStyle.getStyles()}
-      
+      ${customizationCSS}
+
       /* Override for preview container */
       .resume-preview-container {
         max-width: 8.5in;
         margin: 0 auto;
         padding: 0.25in;
         background: #fff;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
       }
-      
+
       @media (min-width: 640px) {
         .resume-preview-container {
           padding: 0.5in;
@@ -129,9 +137,9 @@ export function ResumePreview({ data, templateKey, supportsPhoto = false }: Resu
                 </div>
               </div>
               {exp.description && exp.description.length > 0 && (
-                <ul className="experience-bullets" style={{ listStyleType: 'disc', listStylePosition: 'outside' }}>
+                <ul className="experience-bullets">
                   {exp.description.map((bullet, i) => (
-                    <li key={i} style={{ display: 'list-item', listStyleType: 'disc' }}>{bullet}</li>
+                    <li key={i}>{bullet}</li>
                   ))}
                 </ul>
               )}
@@ -171,9 +179,9 @@ export function ResumePreview({ data, templateKey, supportsPhoto = false }: Resu
               {skillGroup.category && skillGroup.category !== 'Skills' && (
                 <h3 className="skills-category">{skillGroup.category}</h3>
               )}
-              <ul className="skills-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', listStyleType: 'disc', listStylePosition: 'outside' }}>
+              <ul className="skills-list">
                 {skillGroup.items.map((item, itemIdx) => (
-                  <li key={itemIdx} className="skills-item" style={{ display: 'list-item', listStyleType: 'disc' }}>{item}</li>
+                  <li key={itemIdx} className="skills-item">{item}</li>
                 ))}
               </ul>
             </div>

@@ -4,9 +4,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle2, FileText, MessageSquare, Target, Zap, Shield, TrendingUp, Users } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { CheckCircle2, FileText, MessageSquare, Target, Zap, Shield, TrendingUp, Upload, Sparkles, BarChart3 } from 'lucide-react'
 import { AnimatedCounter } from '@/components/shared/AnimatedCounter'
+import { TemplateShowcase } from '@/components/landing/TemplateShowcase'
+import { Testimonials } from '@/components/landing/Testimonials'
+import { FAQ } from '@/components/landing/FAQ'
 
 export default function LandingPage() {
   const [stats, setStats] = useState({
@@ -16,46 +19,48 @@ export default function LandingPage() {
   })
 
   useEffect(() => {
-    // Fetch real stats from API
     fetch('/api/stats/public')
       .then(res => res.json())
       .then(data => {
         setStats({
           jobsLanded: data.jobsLanded || 1250,
-          resumesBuilt: data.resumesBuilt || 350,
-          usersJoined: data.usersJoined || 1985,
+          resumesBuilt: data.resumesBuilt || 3500,
+          usersJoined: data.usersJoined || 2800,
         })
       })
-      .catch(() => {
-        // Use fallback numbers if API fails
-      })
+      .catch(() => {})
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
       <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             <Link href="/" className="flex items-center flex-shrink-0">
-              <Image 
-                src="/logo.png" 
-                alt="Career Pilot - UAE Resume Builder and ATS-Optimized CV Maker" 
-                width={140} 
+              <Image
+                src="/logo.png"
+                alt="Career Pilot"
+                width={140}
                 height={45}
                 className="h-8 sm:h-10 md:h-11 w-auto"
                 priority
               />
             </Link>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="hidden sm:flex items-center gap-6 text-sm text-gray-600">
+              <Link href="/templates" className="hover:text-primary transition-colors">Templates</Link>
+              <Link href="#how-it-works" className="hover:text-primary transition-colors">How It Works</Link>
+              <Link href="#pricing" className="hover:text-primary transition-colors">Pricing</Link>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link href="/auth/login">
-                <Button variant="ghost" size="sm" className="text-sm sm:text-base min-h-[44px] px-3 sm:px-4">
-                  Login
+                <Button variant="ghost" size="sm" className="text-sm min-h-[44px] px-3 sm:px-4">
+                  Log in
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button size="sm" className="text-sm sm:text-base min-h-[44px] px-3 sm:px-4">
-                  Get Started
+                <Button size="sm" className="text-sm min-h-[44px] px-4 sm:px-5">
+                  Create My Resume
                 </Button>
               </Link>
             </div>
@@ -64,305 +69,305 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
-          UAE Resume Builder: Create ATS-Optimized Resumes for Dubai & Abu Dhabi Jobs
-        </h1>
-        <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-2">
-          Build professional, ATS-optimized resumes tailored for UAE employers. Our AI-powered resume builder helps you create job-ready CVs for Dubai, Abu Dhabi, and GCC job markets. Generate cover letters and prepare for interviews with UAE-specific insights.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4">
-          <Link href="/auth/register" className="w-full sm:w-auto">
-            <Button size="lg" className="text-base sm:text-lg px-6 sm:px-8 w-full sm:w-auto min-h-[48px]">
-              Start Free Trial
-            </Button>
-          </Link>
-          <Link href="#how-it-works" className="w-full sm:w-auto">
-            <Button size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 w-full sm:w-auto min-h-[48px]">
-              Learn More
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section id="how-it-works" className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 sm:mb-12">
-          How Our UAE Resume Builder Works
-        </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          <Card className="text-center">
-            <CardHeader>
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600" aria-hidden="true" />
-              </div>
-              <CardTitle className="text-lg sm:text-xl">1. Build Your ATS-Optimized Resume</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                Create an ATS-optimized resume using our professional templates, specifically tailored for UAE job market standards. Our resume builder UAE ensures your CV passes applicant tracking systems used by Dubai and Abu Dhabi employers.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardHeader>
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-purple-600" aria-hidden="true" />
-              </div>
-              <CardTitle className="text-lg sm:text-xl">2. AI-Powered Resume Optimization</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                Let our AI resume builder enhance your resume, generate personalized cover letters, and prepare you for interviews with UAE-specific insights. Get keyword optimization for Dubai and GCC job markets.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center sm:col-span-2 lg:col-span-1">
-            <CardHeader>
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Target className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" aria-hidden="true" />
-              </div>
-              <CardTitle className="text-lg sm:text-xl">3. Ace Your UAE Job Interview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                Practice with AI-generated interview questions tailored for UAE employers. Get scored feedback and know your readiness percentage before the real interview in Dubai or Abu Dhabi.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Features Preview */}
-      <section className="bg-gray-50 py-12 sm:py-16 md:py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 sm:mb-12">
-            Everything You Need for UAE Job Success
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <Card>
-              <CardHeader>
-                <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 mb-2" aria-label="ATS-friendly resume templates icon" />
-                <CardTitle className="text-base sm:text-lg">ATS-Friendly Resume Templates</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  Professional, ATS-friendly resume templates designed specifically for UAE job applications. Our CV maker UAE offers GCC resume formats that pass applicant tracking systems.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <MessageSquare className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600 mb-2" aria-label="AI cover letter generator icon" />
-                <CardTitle className="text-base sm:text-lg">AI Cover Letter Generator UAE</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  Generate personalized cover letters tailored to UAE work culture. Our cover letter generator UAE creates professional letters for Dubai and Abu Dhabi employers.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Target className="w-8 h-8 sm:w-10 sm:h-10 text-green-600 mb-2" aria-label="Interview preparation icon" />
-                <CardTitle className="text-base sm:text-lg">Interview Preparation UAE</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  Get UAE-relevant interview questions, practice answers, and know your readiness score. Prepare for job interviews in Dubai, Abu Dhabi, and GCC countries.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Zap className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-600 mb-2" aria-label="ATS optimization icon" />
-                <CardTitle className="text-base sm:text-lg">ATS Resume Optimization</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  AI-powered resume keyword optimization to pass UAE ATS systems. Our resume builder automatically optimizes your CV for applicant tracking systems used by Dubai employers.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <TrendingUp className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 mb-2" aria-label="Readiness tracking icon" />
-                <CardTitle className="text-base sm:text-lg">Interview Readiness Tracking</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  Track your interview readiness percentage and improve over time. Get analytics on your performance and readiness for UAE job interviews.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 mb-2" aria-label="UAE-focused platform icon" />
-                <CardTitle className="text-base sm:text-lg">UAE-Focused Career Platform</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  Built specifically for UAE job market requirements and culture. Our platform understands Dubai, Abu Dhabi, and GCC hiring standards.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3 sm:mb-4">
-          Simple, Transparent Pricing for Your UAE Resume Builder
-        </h2>
-        <p className="text-center text-sm sm:text-base text-gray-600 mb-8 sm:mb-12 px-4">
-          All prices are controlled and can be updated anytime. Get unlimited access to our ATS resume builder, cover letter generator, and interview prep tools.
-        </p>
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-2 border-primary">
-            <CardHeader className="text-center px-4 sm:px-6">
-              <CardTitle className="text-2xl sm:text-3xl">Premium Access</CardTitle>
-              <CardDescription className="text-base sm:text-lg mt-2">
-                Unlock all features and download your ATS-optimized resumes
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center space-y-3 sm:space-y-4 px-4 sm:px-6 pb-6">
-              <div className="flex items-start justify-center gap-2 text-left">
-                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                <span className="text-sm sm:text-base">Unlimited ATS-Optimized Resume Downloads</span>
-              </div>
-              <div className="flex items-start justify-center gap-2 text-left">
-                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                <span className="text-sm sm:text-base">AI-Powered Resume Optimization</span>
-              </div>
-              <div className="flex items-start justify-center gap-2 text-left">
-                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                <span className="text-sm sm:text-base">Cover Letter Generator UAE</span>
-              </div>
-              <div className="flex items-start justify-center gap-2 text-left">
-                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                <span className="text-sm sm:text-base">Interview Preparation System</span>
-              </div>
-              <div className="flex items-start justify-center gap-2 text-left">
-                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                <span className="text-sm sm:text-base">Readiness Scoring & Analytics</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12 sm:py-16 md:py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
-              Ready to Start Your UAE Career Journey?
-            </h2>
-            <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 opacity-90 px-2">
-              Join thousands of job seekers who landed their dream jobs in Dubai, Abu Dhabi, and across the UAE using our ATS resume builder
-            </p>
-          </div>
-
-          {/* Animated Counters */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto mb-8 sm:mb-12">
-            <div className="text-center">
-              <div className="text-4xl sm:text-5xl md:text-6xl font-bold mb-2">
-                <AnimatedCounter 
-                  end={stats.jobsLanded} 
-                  suffix="+" 
-                  className="text-white"
-                />
-              </div>
-              <p className="text-lg sm:text-xl opacity-90">Jobs Landed</p>
-              <p className="text-xs sm:text-sm opacity-75 mt-1">Success stories in UAE</p>
-            </div>
-
-            <div className="text-center">
-              <div className="text-4xl sm:text-5xl md:text-6xl font-bold mb-2">
-                <AnimatedCounter 
-                  end={stats.resumesBuilt} 
-                  suffix="+" 
-                  className="text-white"
-                />
-              </div>
-              <p className="text-lg sm:text-xl opacity-90">Resumes Built</p>
-              <p className="text-xs sm:text-sm opacity-75 mt-1">ATS-optimized CVs created</p>
-            </div>
-
-            <div className="text-center">
-              <div className="text-4xl sm:text-5xl md:text-6xl font-bold mb-2">
-                <AnimatedCounter 
-                  end={stats.usersJoined} 
-                  suffix="+" 
-                  className="text-white"
-                />
-              </div>
-              <p className="text-lg sm:text-xl opacity-90">Users Joined</p>
-              <p className="text-xs sm:text-sm opacity-75 mt-1">Active job seekers</p>
-            </div>
-          </div>
-
-          <div className="text-center px-4">
-            <Link href="/auth/register" className="inline-block">
-              <Button size="lg" variant="secondary" className="text-base sm:text-lg px-6 sm:px-8 min-h-[48px] w-full sm:w-auto">
-                Get Started Now
+      <section className="container mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 md:pt-20 pb-8 sm:pb-12">
+        <div className="max-w-3xl mx-auto text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-5 leading-tight tracking-tight text-gray-900">
+            Land your dream job with a resume that{' '}
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              gets interviews
+            </span>
+          </h1>
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Only 2% of resumes make it past ATS filters. Build yours with AI-powered optimization,
+            professional templates, and interview prep — all in one platform built for UAE job seekers.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6">
+            <Link href="/auth/register" className="w-full sm:w-auto">
+              <Button size="lg" className="text-base sm:text-lg px-8 w-full sm:w-auto min-h-[52px] gap-2">
+                <Sparkles className="h-5 w-5" />
+                Create My Resume
+              </Button>
+            </Link>
+            <Link href="/auth/register?upload=true" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="text-base sm:text-lg px-8 w-full sm:w-auto min-h-[52px] gap-2">
+                <Upload className="h-5 w-5" />
+                Upload Existing Resume
               </Button>
             </Link>
           </div>
+          <p className="text-xs text-gray-500">
+            Free to start. No credit card required.
+          </p>
+        </div>
+
+        {/* Trust bar */}
+        <div className="mt-10 sm:mt-14 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-center">
+          <div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <AnimatedCounter end={stats.resumesBuilt} suffix="+" />
+            </div>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Resumes built</p>
+          </div>
+          <div className="h-8 w-px bg-gray-200 hidden sm:block" />
+          <div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <AnimatedCounter end={stats.jobsLanded} suffix="+" />
+            </div>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Jobs landed</p>
+          </div>
+          <div className="h-8 w-px bg-gray-200 hidden sm:block" />
+          <div>
+            <div className="text-2xl sm:text-3xl font-bold text-green-600">90%</div>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">ATS pass rate</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Template Showcase */}
+      <TemplateShowcase />
+
+      {/* How It Works */}
+      <section id="how-it-works" className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        <div className="text-center mb-10 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
+            Your job-winning resume in 3 steps
+          </h2>
+          <p className="text-gray-600 max-w-xl mx-auto">
+            No writing skills needed. Our AI handles the hard part.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
+          <div className="text-center">
+            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-7 h-7 text-blue-600" aria-hidden="true" />
+            </div>
+            <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Step 1</div>
+            <h3 className="text-lg font-semibold mb-2">Pick a template</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Choose from 16 ATS-optimized templates designed by hiring experts. Every one passes recruiter screening.
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-7 h-7 text-purple-600" aria-hidden="true" />
+            </div>
+            <div className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-2">Step 2</div>
+            <h3 className="text-lg font-semibold mb-2">Fill in your details, AI does the rest</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Add your experience and skills. Our AI generates polished bullet points, summaries, and keyword optimization.
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Target className="w-7 h-7 text-green-600" aria-hidden="true" />
+            </div>
+            <div className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">Step 3</div>
+            <h3 className="text-lg font-semibold mb-2">Download and start applying</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Download as PDF, generate a matching cover letter, and practice interview questions — all in one place.
+            </p>
+          </div>
+        </div>
+        <div className="text-center mt-10">
+          <Link href="/auth/register">
+            <Button size="lg" className="min-h-[48px] px-8 gap-2">
+              Create My Resume Now
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="bg-gray-50 py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
+              Everything you need to get hired
+            </h2>
+            <p className="text-gray-600 max-w-xl mx-auto">
+              One platform for your entire job application — from resume to interview.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
+            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-5 sm:p-6">
+                <Sparkles className="w-8 h-8 text-blue-600 mb-3" aria-hidden="true" />
+                <h3 className="font-semibold mb-1.5">AI Resume Writer</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Generate keyword-optimized bullet points and summaries tailored to your target role.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-5 sm:p-6">
+                <Zap className="w-8 h-8 text-yellow-600 mb-3" aria-hidden="true" />
+                <h3 className="font-semibold mb-1.5">ATS Optimization</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Every template passes ATS filters. Your resume gets seen by real recruiters, not just bots.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-5 sm:p-6">
+                <MessageSquare className="w-8 h-8 text-purple-600 mb-3" aria-hidden="true" />
+                <h3 className="font-semibold mb-1.5">Cover Letter Generator</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Generate a tailored cover letter that matches your resume in seconds. Not generic — specific to your role.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-5 sm:p-6">
+                <Target className="w-8 h-8 text-green-600 mb-3" aria-hidden="true" />
+                <h3 className="font-semibold mb-1.5">Interview Prep & Scoring</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Practice with AI-generated interview questions and get a readiness score before the real thing.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-5 sm:p-6">
+                <BarChart3 className="w-8 h-8 text-indigo-600 mb-3" aria-hidden="true" />
+                <h3 className="font-semibold mb-1.5">Resume Tailoring</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Paste a job posting and our AI adjusts your resume to match the role&apos;s requirements.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-5 sm:p-6">
+                <Shield className="w-8 h-8 text-teal-600 mb-3" aria-hidden="true" />
+                <h3 className="font-semibold mb-1.5">Built for the UAE</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Understands Dubai, Abu Dhabi, and GCC hiring standards. Formats and keywords that UAE employers expect.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <Testimonials />
+
+      {/* Pricing Section */}
+      <section id="pricing" className="bg-gray-50 py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
+              Simple, transparent pricing
+            </h2>
+            <p className="text-gray-600 max-w-xl mx-auto">
+              Start free. Upgrade when you&apos;re ready to download and unlock AI features.
+            </p>
+          </div>
+          <div className="max-w-lg mx-auto">
+            <Card className="border-2 border-primary shadow-lg">
+              <CardContent className="p-6 sm:p-8">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold mb-1">Premium Access</h3>
+                  <p className="text-sm text-gray-600">
+                    Unlock everything. Cancel anytime.
+                  </p>
+                </div>
+                <div className="space-y-3 mb-6">
+                  {[
+                    'Unlimited resume downloads (PDF)',
+                    'AI-powered content generation',
+                    'Cover letter generator',
+                    'Interview prep with scoring',
+                    'Resume tailoring to job posts',
+                    'All 16 professional templates',
+                    'Priority support',
+                  ].map((feature) => (
+                    <div key={feature} className="flex items-start gap-2.5">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link href="/auth/register" className="block">
+                  <Button size="lg" className="w-full min-h-[48px]">
+                    Get Started Free
+                  </Button>
+                </Link>
+                <p className="text-xs text-center text-gray-500 mt-3">
+                  Free to create. Pay only when you download.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <FAQ />
+
+      {/* Bottom CTA */}
+      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
+            Your next career move starts here
+          </h2>
+          <p className="text-base sm:text-lg opacity-90 mb-8 max-w-xl mx-auto">
+            Join {stats.usersJoined.toLocaleString()}+ professionals who built their resume with Career Pilot and landed jobs across the UAE.
+          </p>
+          <Link href="/auth/register">
+            <Button size="lg" variant="secondary" className="text-base sm:text-lg px-8 min-h-[52px]">
+              Build My Resume Free
+            </Button>
+          </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-gray-50 py-8 sm:py-12">
+      <footer className="border-t bg-white py-10 sm:py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            <div>
-              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">Career Pilot</h3>
-              <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-                AI-powered resume builder and career readiness platform for UAE job seekers. Create ATS-optimized resumes for Dubai, Abu Dhabi, and GCC employers.
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
+            <div className="col-span-2 sm:col-span-1">
+              <h3 className="font-bold text-base mb-3">Career Pilot</h3>
+              <p className="text-gray-600 text-xs leading-relaxed">
+                AI-powered career platform for UAE job seekers. Build ATS-optimized resumes, cover letters, and ace your interviews.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Product</h4>
-              <ul className="space-y-2 text-xs sm:text-sm text-gray-600">
-                <li><Link href="#how-it-works" className="hover:text-primary transition-colors">UAE Resume Builder</Link></li>
-                <li><Link href="#how-it-works" className="hover:text-primary transition-colors">ATS Resume Templates</Link></li>
-                <li><Link href="#how-it-works" className="hover:text-primary transition-colors">Cover Letter Generator</Link></li>
-                <li><Link href="#how-it-works" className="hover:text-primary transition-colors">Interview Prep UAE</Link></li>
+              <h4 className="font-semibold mb-3 text-sm">Product</h4>
+              <ul className="space-y-2 text-xs text-gray-600">
+                <li><Link href="/templates" className="hover:text-primary transition-colors">Resume Templates</Link></li>
+                <li><Link href="/auth/register" className="hover:text-primary transition-colors">Resume Builder</Link></li>
+                <li><Link href="/auth/register" className="hover:text-primary transition-colors">Cover Letter Generator</Link></li>
+                <li><Link href="/auth/register" className="hover:text-primary transition-colors">Interview Prep</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Company</h4>
-              <ul className="space-y-2 text-xs sm:text-sm text-gray-600">
+              <h4 className="font-semibold mb-3 text-sm">Company</h4>
+              <ul className="space-y-2 text-xs text-gray-600">
                 <li><Link href="/about" className="hover:text-primary transition-colors">About</Link></li>
-                <li><Link href="/products" className="hover:text-primary transition-colors">Products</Link></li>
                 <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Support</h4>
-              <ul className="space-y-2 text-xs sm:text-sm text-gray-600">
+              <h4 className="font-semibold mb-3 text-sm">Support</h4>
+              <ul className="space-y-2 text-xs text-gray-600">
                 <li><Link href="/help" className="hover:text-primary transition-colors">Help Center</Link></li>
                 <li><Link href="/help/faqs" className="hover:text-primary transition-colors">FAQs</Link></li>
                 <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
               </ul>
             </div>
           </div>
-          <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t text-center text-xs sm:text-sm text-gray-600">
-            © {new Date().getFullYear()} Career Pilot - UAE Resume Builder & ATS-Optimized CV Maker. All rights reserved.
+          <div className="mt-8 pt-8 border-t text-center text-xs text-gray-500">
+            © {new Date().getFullYear()} Career Pilot by AxisMind. All rights reserved.
           </div>
         </div>
       </footer>
     </div>
   )
 }
-

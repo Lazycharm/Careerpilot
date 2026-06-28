@@ -39,9 +39,10 @@ export const defaultCustomization: ResumeCustomization = {
 }
 
 // Generate CSS from customization settings
+// Scoped to .resume-preview-container to avoid leaking styles to the page
 export function generateCustomizationCSS(customization: ResumeCustomization): string {
   return `
-    :root {
+    .resume-preview-container {
       --resume-primary-color: ${customization.primaryColor};
       --resume-secondary-color: ${customization.secondaryColor};
       --resume-text-color: ${customization.textColor};
@@ -54,46 +55,42 @@ export function generateCustomizationCSS(customization: ResumeCustomization): st
       --resume-border-style: ${customization.borderStyle};
       --resume-border-width: ${customization.borderWidth}px;
       --resume-border-radius: ${customization.borderRadius}px;
+
+      font-family: ${customization.fontFamily} !important;
+      color: ${customization.textColor} !important;
+      background-color: ${customization.backgroundColor} !important;
+      font-size: ${customization.fontSize}pt !important;
+      line-height: ${customization.lineHeight} !important;
     }
-    
-    body {
-      font-family: var(--resume-font-family);
-      color: var(--resume-text-color);
-      background-color: var(--resume-bg-color);
-      font-size: var(--resume-font-size);
-      line-height: var(--resume-line-height);
-    }
-    
-    .resume-container {
-      background: var(--resume-bg-color);
-    }
-    
-    .section-title {
-      color: var(--resume-primary-color);
-      border-bottom: var(--resume-border-width) var(--resume-border-style) var(--resume-primary-color);
-      margin-bottom: ${customization.sectionSpacing}px;
+
+    .resume-preview-container .section-title {
+      color: ${customization.primaryColor} !important;
+      border-bottom: ${customization.borderWidth}px ${customization.borderStyle} ${customization.primaryColor} !important;
+      margin-bottom: ${customization.sectionSpacing}px !important;
       padding-bottom: 8px;
     }
-    
-    .resume-section {
-      margin-bottom: var(--resume-section-spacing);
+
+    .resume-preview-container .resume-section {
+      margin-bottom: ${customization.sectionSpacing}px !important;
     }
-    
-    .experience-position,
-    .education-degree {
-      color: var(--resume-primary-color);
+
+    .resume-preview-container .experience-position,
+    .resume-preview-container .education-degree {
+      color: ${customization.primaryColor} !important;
     }
-    
-    .resume-header {
-      background: linear-gradient(135deg, var(--resume-primary-color) 0%, var(--resume-secondary-color) 100%);
+
+    .resume-preview-container .resume-header {
+      background: linear-gradient(135deg, ${customization.primaryColor} 0%, ${customization.secondaryColor} 100%) !important;
     }
-    
-    a {
-      color: var(--resume-primary-color);
+
+    .resume-preview-container a {
+      color: ${customization.primaryColor} !important;
     }
-    
-    h1, h2, h3 {
-      font-family: var(--resume-heading-font);
+
+    .resume-preview-container h1,
+    .resume-preview-container h2,
+    .resume-preview-container h3 {
+      font-family: ${customization.headingFont} !important;
     }
   `
 }

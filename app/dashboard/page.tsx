@@ -75,7 +75,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Resume Progress</CardTitle>
+              <CardTitle className="text-sm font-medium">Resume Completion</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -135,39 +135,39 @@ export default function DashboardPage() {
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/resume/new')}>
             <CardHeader className="pb-3">
               <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600 mb-2" aria-label="Resume builder icon" />
-              <CardTitle className="text-base sm:text-lg">Build ATS-Optimized Resume</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Build My Resume</CardTitle>
               <CardDescription className="text-sm">
-                Create or edit your ATS-optimized resume for UAE jobs
+                Create a professional resume that gets you interviews
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full min-h-[44px]">Get Started</Button>
+              <Button className="w-full min-h-[44px]">Create New Resume</Button>
             </CardContent>
           </Card>
 
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/cover-letter/new')}>
             <CardHeader className="pb-3">
               <MessageSquare className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600 mb-2" aria-label="Cover letter generator icon" />
-              <CardTitle className="text-base sm:text-lg">Cover Letter Generator</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Write Cover Letter</CardTitle>
               <CardDescription className="text-sm">
-                Generate AI-powered cover letters for UAE employers
+                Generate a tailored cover letter in seconds
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full min-h-[44px]">Create Now</Button>
+              <Button className="w-full min-h-[44px]">Write My Cover Letter</Button>
             </CardContent>
           </Card>
 
           <Card className="cursor-pointer hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1" onClick={() => router.push('/interview/new')}>
             <CardHeader className="pb-3">
               <Target className="h-8 w-8 sm:h-10 sm:w-10 text-green-600 mb-2" aria-label="Interview preparation icon" />
-              <CardTitle className="text-base sm:text-lg">Interview Prep UAE</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Practice Interviews</CardTitle>
               <CardDescription className="text-sm">
-                Practice and get readiness score for UAE job interviews
+                AI-generated questions with readiness scoring
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full min-h-[44px]">Start Practice</Button>
+              <Button className="w-full min-h-[44px]">Practice Interview Questions</Button>
             </CardContent>
           </Card>
         </div>
@@ -194,7 +194,7 @@ export default function DashboardPage() {
                     Upgrade to unlock all features and download your ATS-optimized resumes
                   </p>
                   <Link href="/subscription" className="block">
-                    <Button className="w-full sm:w-auto min-h-[44px]">View Subscription Plans</Button>
+                    <Button className="w-full sm:w-auto min-h-[44px]">Unlock Full Access</Button>
                   </Link>
                 </div>
               )}

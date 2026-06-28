@@ -85,104 +85,25 @@ export default function CoverLetterViewPage() {
   }
 
   const handleDownload = async () => {
+    // Phase 1: server-side React-PDF rendering. We always expect a real PDF
+    // back from /api/cover-letters/[id]/export — the HTML/text fallbacks
+    // from the previous html2canvas pipeline have been removed.
     try {
       const response = await fetch(`/api/cover-letters/${letterId}/export`)
-      
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Failed to generate PDF' }))
         alert(error.error || 'Failed to download PDF')
         return
       }
-
-      const contentType = response.headers.get('content-type')
-      
-      if (contentType?.includes('application/pdf')) {
-        // PDF download
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `cover-letter-${coverLetter?.jobTitle || 'letter'}.pdf`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-      } else if (contentType?.includes('text/html')) {
-        // Fallback: HTML response - use client-side PDF generation
-        const htmlContent = await response.text()
-        
-        // Try to use html2pdf or jsPDF
-        try {
-          const { default: jsPDF } = await import('jspdf')
-          const html2canvas = (await import('html2canvas')).default
-          
-          // Create a temporary container
-          const tempDiv = document.createElement('div')
-          tempDiv.innerHTML = htmlContent
-          tempDiv.style.position = 'absolute'
-          tempDiv.style.left = '-9999px'
-          tempDiv.style.width = '8.5in'
-          document.body.appendChild(tempDiv)
-          
-          await new Promise(resolve => setTimeout(resolve, 500))
-          
-          const canvas = await html2canvas(tempDiv, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-          })
-          
-          document.body.removeChild(tempDiv)
-          
-          const imgData = canvas.toDataURL('image/png')
-          const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'in',
-            format: 'a4',
-          })
-          
-          const imgWidth = 8.5
-          const pageHeight = 11
-          const imgHeight = (canvas.height * imgWidth) / canvas.width
-          let heightLeft = imgHeight
-          let position = 0
-          
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-          heightLeft -= pageHeight
-          
-          while (heightLeft >= 0) {
-            position = heightLeft - imgHeight
-            pdf.addPage()
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-            heightLeft -= pageHeight
-          }
-          
-          pdf.save(`cover-letter-${coverLetter?.jobTitle || 'letter'}.pdf`)
-        } catch (error) {
-          console.error('Client-side PDF generation failed:', error)
-          // Fallback to text download
-          const blob = new Blob([content], { type: 'text/plain' })
-          const url = window.URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = `cover-letter-${coverLetter?.jobTitle || 'letter'}.txt`
-          document.body.appendChild(a)
-          a.click()
-          window.URL.revokeObjectURL(url)
-          document.body.removeChild(a)
-        }
-      } else {
-        // Fallback to text download
-        const blob = new Blob([content], { type: 'text/plain' })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `cover-letter-${coverLetter?.jobTitle || 'letter'}.txt`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-      }
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `cover-letter-${coverLetter?.jobTitle || 'letter'}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
     } catch (error) {
       console.error('Download error:', error)
       alert('Failed to download cover letter')
@@ -230,8 +151,8 @@ export default function CoverLetterViewPage() {
     }
 
     const bodyLines = bodyStart > 0 ? lines.slice(bodyStart) : lines
-    let bodyContent: string[] = []
-    let footerLines: string[] = []
+    const bodyContent: string[] = []
+    const footerLines: string[] = []
     let inFooter = false
 
     for (let i = 0; i < bodyLines.length; i++) {

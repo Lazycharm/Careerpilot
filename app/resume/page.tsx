@@ -74,7 +74,7 @@ export default function ResumeListPage() {
       <Navbar />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold">My ATS-Optimized Resumes</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">My Resumes</h1>
           <Link href="/resume/new" className="w-full sm:w-auto">
             <Button className="w-full sm:w-auto min-h-[44px]">
               <Plus className="h-4 w-4 mr-2" />
@@ -88,7 +88,7 @@ export default function ResumeListPage() {
             <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 px-4">
               <FileText className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" aria-hidden="true" />
               <h3 className="text-lg sm:text-xl font-semibold mb-2 text-center">No resumes yet</h3>
-              <p className="text-sm sm:text-base text-gray-600 mb-4 text-center">Create your first ATS-optimized resume for UAE jobs</p>
+              <p className="text-sm sm:text-base text-gray-600 mb-4 text-center">Create your first professional resume and start applying</p>
               <Link href="/resume/new" className="w-full sm:w-auto">
                 <Button className="w-full sm:w-auto min-h-[44px]">
                   <Plus className="h-4 w-4 mr-2" />

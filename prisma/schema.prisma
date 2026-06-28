@@ -6,13 +6,53 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Pooled connection (Supabase pgbouncer on port 6543) — used by the app at runtime.
+  url       = env("DATABASE_URL")
+  // Direct connection (port 5432) — used by `prisma migrate`, which can't
+  // run through pgbouncer in transaction mode.
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
   user
   admin
+}
+
+// ── Phase 3: payments ───────────────────────────────────────────────────────
+enum PaymentMethod {
+  whatsapp
+  ziina
+  manual_other
+}
+
+enum PaymentStatus {
+  created
+  pending_whatsapp
+  pending_ziina
+  approved
+  rejected
+  refunded
+  failed
+}
+
+// ── Phase 2: AI provider config ─────────────────────────────────────────────
+enum AIProviderCode {
+  claude
+  openai
+  mock
+}
+
+enum AIUseCase {
+  cv_summary
+  cv_bullets
+  cover_letter
+  interview_questions
+  interview_feedback
+  ats_feedback
+  tailor_cv
+  tailor_cl
+  application_email
 }
 
 enum ResumeStatus {
@@ -34,6 +74,53 @@ enum QuestionType {
 enum DownloadType {
   resume
   cover_letter
+}
+
+// ── Phase 4: Documents + Companies ──────────────────────────────────────────
+enum DocumentType {
+  resume
+  cover_letter
+  ats_report
+  tailored_resume
+  tailored_cover_letter
+}
+
+// ── Phase 5: notifications & email campaigns ────────────────────────────────
+enum NotificationChannel {
+  in_app
+  email
+  whatsapp
+  push
+}
+
+enum EmailCampaignStatus {
+  draft
+  scheduled
+  sending
+  sent
+  paused
+  failed
+}
+
+// ── Phase 6: Automation ─────────────────────────────────────────────────────
+enum AutomationStatus {
+  active
+  paused
+  completed
+  errored
+}
+
+enum AutomationRunStatus {
+  queued
+  running
+  succeeded
+  partial
+  failed
+}
+
+enum EmailAccountProvider {
+  gmail
+  smtp
 }
 
 enum SubscriptionStatus {
@@ -68,6 +155,14 @@ model User {
   subscriptions Subscription[]
   aiUsage       AIUsage[]
   settings      Setting[] @relation("SettingsUpdatedBy")
+  payments      Payment[] @relation("PaymentUser")
+  folders       Folder[]
+  documents     Document[]
+  auditEvents   AuditLog[] @relation("AuditActor")
+  activityEvents ActivityLog[]
+  notifications Notification[]
+  emailAccounts EmailAccount[]
+  automations   Automation[]
 }
 
 model UserProfile {
@@ -97,6 +192,8 @@ model Resume {
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   template   ResumeTemplate @relation(fields: [templateId], references: [id])
   downloads  Download[]
+  versions   ResumeVersion[]
+  document   Document?
 }
 
 model ResumeTemplate {
@@ -119,12 +216,18 @@ model CoverLetter {
   userId      String
   jobTitle    String
   industry    String
+  companyId   String?  // Phase 4 — for tailored cover letters
   content     String   @db.Text
   aiGenerated Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company  Company? @relation("CoverLetterCompany", fields: [companyId], references: [id], onDelete: SetNull)
+  document Document?
+
+  @@index([userId])
+  @@index([companyId])
 }
 
 model InterviewSession {
@@ -185,8 +288,9 @@ model Subscription {
   id                    String             @id @default(uuid())
   userId                String
   status                SubscriptionStatus @default(active)
-  planType              PlanType          @default(free)
-  ziinaOrderId          String?            // Ziina payment order ID
+  planType              PlanType          @default(free)        // legacy — being phased out
+  pricingId             String?                                  // Phase 4 — links to Pricing.id
+  ziinaOrderId          String?
   currentPeriodStart    DateTime?
   currentPeriodEnd      DateTime?
   cancelAtPeriodEnd     Boolean           @default(false)
@@ -196,7 +300,11 @@ model Subscription {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pricing Pricing? @relation(fields: [pricingId], references: [id])
+
+  @@index([userId, status])
+  @@index([pricingId])
 }
 
 model AIUsage {
@@ -224,5 +332,428 @@ model Setting {
   updatedAt   DateTime @default(now())
 
   updatedByUser User @relation("SettingsUpdatedBy", fields: [updatedBy], references: [id])
+}
+
+// ── Phase 3: pricing catalogue (admin-editable) ────────────────────────────
+// One row per plan code. The free / paid bundles / time-bounded plans all
+// live here so admin can edit prices and durations from a single surface.
+// The existing Subscription model is left in place; new Payment rows
+// reference Pricing by id. Phase 4+ migrations will fold legacy plan data.
+model Pricing {
+  id           String   @id @default(uuid())
+  code         String   @unique // free, premium_bundle, tailored_pack, weekly, two_week, monthly
+  name         String
+  description  String?
+  amountFils   Int      // 0 for free; e.g. 500 = 5.00 AED
+  currency     String   @default("AED")
+  durationDays Int?     // null for one-shot bundles
+  isActive     Boolean  @default(true)
+  features     Json     // { downloads:int, tailored:bool, automation:bool, ... }
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  payments      Payment[]
+  subscriptions Subscription[]
+
+  @@index([isActive, sortOrder])
+}
+
+// ── Phase 3: payment requests (WhatsApp + Ziina dual rail) ─────────────────
+// Each row is one user's attempt to pay for a Pricing tier. Method is fixed
+// at creation; status transitions are gated by either admin (WhatsApp rail)
+// or Ziina webhook (Ziina rail). See lib/payments/router.ts.
+model Payment {
+  id                  String        @id @default(uuid())
+  userId              String
+  pricingId           String
+  method              PaymentMethod
+  status              PaymentStatus @default(created)
+  amountFils          Int
+  currency            String        @default("AED")
+  ziinaIntentId       String?       @unique // Ziina rail only
+  ziinaRedirectUrl    String?
+  whatsappRequestText String?       @db.Text // pre-rendered template body
+  whatsappUrl         String?       @db.Text // wa.me link generated for the user
+  proofUrls           String[]      // admin uploads from WhatsApp screenshots
+  adminNote           String?       @db.Text
+  approvedById        String?
+  approvedAt          DateTime?
+  rejectedReason      String?
+  rejectedAt          DateTime?
+  metadata            Json?         // arbitrary context (resumeId, etc.)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  user                User          @relation("PaymentUser", fields: [userId], references: [id], onDelete: Cascade)
+  pricing             Pricing       @relation(fields: [pricingId], references: [id])
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([method, status])
+}
+
+// ── Phase 3: WhatsApp message templates (admin-editable) ───────────────────
+// `body` supports {{mergeTags}} like {{userName}}, {{planName}}, {{amountAED}},
+// {{paymentId}}. Codes used by the app:
+//   payment_request, payment_approved, payment_rejected, payment_reminder
+model WhatsAppTemplate {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  body      String   @db.Text
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt @default(now())
+}
+
+// ── Phase 2: per-use-case AI provider config (admin-editable) ──────────────
+// One row per AIUseCase. Resolved at request time by lib/ai/router.ts.
+// `fallback` is tried when the primary errors or returns empty.
+model AISetting {
+  id           String         @id @default(uuid())
+  useCase      AIUseCase      @unique
+  provider     AIProviderCode @default(claude)
+  fallback     AIProviderCode @default(openai)
+  model        String         // e.g. "claude-sonnet-4-6", "gpt-4o-mini"
+  temperature  Float          @default(0.7)
+  maxTokens    Int            @default(1500)
+  systemPrompt String         @db.Text
+  isEnabled    Boolean        @default(true)
+  updatedAt    DateTime       @updatedAt @default(now())
+}
+
+// ── Phase 4: Folders (My Documents organisation) ───────────────────────────
+// Single-level for now (no parentId nesting). Deep trees become a footgun in
+// flat-list UIs; we'll add nesting only if user research demands it.
+model Folder {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  color     String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents Document[]
+
+  @@index([userId, deletedAt])
+}
+
+// ── Phase 4: Document — unified pointer for CV / cover letter / ATS report ─
+// Holds metadata (title, tags, download count) and points at exactly one
+// underlying entity. Existing Resume / CoverLetter rows are NOT migrated
+// wholesale; a Document is created when the user explicitly organises a
+// file into a folder. Future writes (tailored output) create both rows.
+model Document {
+  id            String       @id @default(uuid())
+  userId        String
+  folderId      String?
+  type          DocumentType
+  resumeId      String?      @unique
+  coverLetterId String?      @unique
+  title         String
+  tags          String[]
+  downloadCount Int          @default(0)
+  lastDownloadAt DateTime?
+  metadata      Json?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder      Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  resume      Resume?      @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  coverLetter CoverLetter? @relation(fields: [coverLetterId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, deletedAt])
+  @@index([folderId])
+}
+
+// ── Phase 4: Companies (UAE employer database) ─────────────────────────────
+// Used for tailored CV / cover-letter generation and as Phase-6 automation
+// targets. Admin maintains this list; Companies surface on the public
+// /companies/[slug] SEO pages.
+model Company {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  logoUrl     String?
+  website     String?
+  industry    String?
+  category    String?  // retail, airline, ecommerce, telco, etc.
+  hqCity      String?
+  hqCountry   String   @default("UAE")
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contacts     CompanyContact[]
+  coverLetters CoverLetter[]   @relation("CoverLetterCompany")
+  automations  AutomationCompany[]
+  applications AutomationApplication[]
+
+  @@index([industry, isActive])
+  @@index([category, isActive])
+}
+
+model CompanyContact {
+  id        String   @id @default(uuid())
+  companyId String
+  role      String?  // HR, Recruiter, Hiring Manager
+  email     String
+  name      String?
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, email])
+}
+
+// ── Phase 4: Resume version snapshots ──────────────────────────────────────
+// Auto-pinned every 25 saves (see /api/resumes/[id] PATCH) and on-demand
+// when the user clicks "Save version". Snapshots store the full `data` JSON
+// so reverts are trivial.
+model ResumeVersion {
+  id        String   @id @default(uuid())
+  resumeId  String
+  label     String?  // null for auto-pinned snapshots
+  data      Json
+  createdAt DateTime @default(now())
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId, createdAt])
+}
+
+// ── Phase 5: defensible audit trail for administrative + sensitive actions ─
+// Written by lib/security/audit.ts. Never deleted; this is the forensic log.
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  action    String   // e.g. "payment.approve", "user.role.change"
+  target    String?  // e.g. "payment:abc-123"
+  before    Json?
+  after     Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([target])
+}
+
+// ── Phase 5: lightweight product activity feed (user-facing events) ────────
+// Bounded retention is fine here; this drives admin analytics + the user's
+// "recent activity" surfaces. Not a security log — use AuditLog for that.
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  event     String   // e.g. "resume.created", "cv.tailored", "interview.completed"
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([event, createdAt])
+}
+
+// ── Phase 5: user-visible notifications (in-app + email + WhatsApp) ────────
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String
+  channel   NotificationChannel @default(in_app)
+  title     String
+  body      String              @db.Text
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+// ── Phase 5: admin-composed marketing / lifecycle campaigns via Resend ─────
+model EmailCampaign {
+  id           String              @id @default(uuid())
+  name         String
+  subject      String
+  bodyHtml     String              @db.Text
+  bodyText     String?             @db.Text
+  segmentRule  Json                // filter against User attributes
+  status       EmailCampaignStatus @default(draft)
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  sentCount    Int                 @default(0)
+  failedCount  Int                 @default(0)
+  createdBy    String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([status, scheduledFor])
+}
+
+// ── Phase 6: user-connected email accounts (Gmail OAuth + SMTP) ────────────
+// `oauthTokensEnc` stores the refresh token as an AES-256-GCM ciphertext —
+// see lib/security/encryption.ts. Plain refresh tokens NEVER hit the disk.
+model EmailAccount {
+  id             String               @id @default(uuid())
+  userId         String
+  provider       EmailAccountProvider
+  emailAddress   String
+  displayName    String?
+  oauthTokensEnc String?              @db.Text
+  smtpHostEnc    String?              @db.Text  // reserved for Phase 6b
+  scopes         String[]
+  isActive       Boolean              @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  automations Automation[]
+
+  @@unique([userId, emailAddress])
+  @@index([userId, isActive])
+}
+
+// ── Phase 6: scheduled job-application automation ──────────────────────────
+// One row = one configured campaign. The cron runner enumerates due
+// automations every minute and dispatches per-company tailored emails.
+model Automation {
+  id                 String           @id @default(uuid())
+  userId             String
+  emailAccountId     String
+  resumeId           String?
+  coverLetterId      String?
+  name               String
+  status             AutomationStatus @default(active)
+  generatePerCompany Boolean          @default(true)
+  schedule           Json             // { cron: "*/30 * * * *", timezone: "Asia/Dubai", dailyCap: 10, workingHours: { start: 9, end: 18 } }
+  startAt            DateTime?
+  endAt              DateTime?
+  lastRunAt          DateTime?
+  nextRunAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailAccount EmailAccount            @relation(fields: [emailAccountId], references: [id])
+  companies    AutomationCompany[]
+  runs         AutomationRun[]
+  applications AutomationApplication[]
+
+  @@index([userId, status])
+  @@index([status, nextRunAt])
+}
+
+// ── Phase 6: Automation ←→ Company join table ──────────────────────────────
+// Plain join so the cron runner can scope per Automation without a JSON array.
+model AutomationCompany {
+  automationId String
+  companyId    String
+  addedAt      DateTime @default(now())
+
+  automation Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@id([automationId, companyId])
+  @@index([companyId])
+}
+
+// ── Phase 6: per-execution telemetry ───────────────────────────────────────
+model AutomationRun {
+  id               String              @id @default(uuid())
+  automationId     String
+  startedAt        DateTime            @default(now())
+  endedAt          DateTime?
+  status           AutomationRunStatus @default(queued)
+  applicationsSent Int                 @default(0)
+  errorSummary     String?             @db.Text
+
+  automation   Automation              @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  applications AutomationApplication[]
+
+  @@index([automationId, startedAt])
+}
+
+model AutomationApplication {
+  id           String   @id @default(uuid())
+  automationId String
+  runId        String?
+  companyId    String?
+  toEmail      String
+  subject      String
+  bodyPreview  String   @db.Text
+  pdfResumeKey String?
+  pdfCoverKey  String?
+  messageId    String?
+  status       String   // queued | sent | bounced | failed | skipped
+  errorMessage String?
+  sentAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  automation Automation     @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  run        AutomationRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+  company    Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([automationId, status])
+  @@index([companyId])
+}
+
+// ── Phase 7: SEO content surfaces ───────────────────────────────────────────
+// Blog posts authored as MDX in DB. We do not pull from a CMS — the platform
+// already maintains an admin auth surface; one less integration point.
+model BlogPost {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  excerpt     String   @db.Text
+  bodyMdx     String   @db.Text
+  coverImage  String?
+  tags        String[]
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+  author      String
+  seoTitle    String?
+  seoDesc     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, publishedAt])
+}
+
+// Programmatic SEO surfaces. The page templates (app/resume-templates/[industry]
+// etc.) read from a curated TS data file at first; admin can override per-slug
+// content via these rows once content marketing kicks off.
+model IndustryPage {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  content     String   @db.Text
+  templates   String[] // template slugs to feature
+  faqs        Json?
+  isPublished Boolean  @default(false)
+  updatedAt   DateTime @updatedAt @default(now())
+}
+
+model CityPage {
+  id          String   @id @default(uuid())
+  slug        String   @unique // dubai, abu-dhabi, sharjah, etc.
+  title       String
+  content     String   @db.Text
+  faqs        Json?
+  isPublished Boolean  @default(false)
+  updatedAt   DateTime @updatedAt @default(now())
 }
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { maybeRecordAutoVersion } from '@/lib/resume/versions'
 
 export async function GET(
   request: Request,
@@ -78,6 +79,18 @@ export async function PUT(
           { error: 'Template not found or inactive' },
           { status: 400 }
         )
+      }
+    }
+
+    // Phase 4: auto-pin a version snapshot of the PRE-edit state every Nth
+    // save. We need the current `data` to snapshot, so we read it first.
+    if (data) {
+      const existing = await prisma.resume.findFirst({
+        where: { id: params.id, userId: session.user.id },
+        select: { data: true },
+      })
+      if (existing) {
+        await maybeRecordAutoVersion(params.id, existing.data)
       }
     }
 

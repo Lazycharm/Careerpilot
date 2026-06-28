@@ -16,6 +16,7 @@ import { ResumePreview } from '@/components/resume/ResumePreview'
 import { ATSOptimizer } from '@/components/resume/ATSOptimizer'
 import { CustomizationPanel } from '@/components/resume/CustomizationPanel'
 import { PDFPreviewDialog } from '@/components/resume/PDFPreviewDialog'
+import { WizardProgress } from '@/components/resume/WizardProgress'
 import { defaultCustomization } from '@/lib/resume/customization'
 
 export default function ResumeEditorPage() {
@@ -465,10 +466,13 @@ export default function ResumeEditorPage() {
   }
 
   const handleDownload = async (pdfType: 'a4' | 'long-scroll' = 'a4') => {
+    // Phase 1: server-side React-PDF rendering. We always get a real PDF
+    // back from /api/resumes/[id]/export — the html2canvas client fallback
+    // and the `?type=long-scroll` mode have been removed (long-scroll
+    // produced a single oversized page that no ATS could parse).
     try {
-      // Server generates PDF using Puppeteer - just download it
-      const response = await fetch(`/api/resumes/${resumeId}/export?type=${pdfType}`)
-      
+      const response = await fetch(`/api/resumes/${resumeId}/export`)
+
       if (response.status === 403) {
         const error = await response.json()
         if (error.requiresPayment) {
@@ -476,125 +480,26 @@ export default function ResumeEditorPage() {
           return
         }
       }
-      
+
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Failed to download resume' }))
         alert(error.error || 'Failed to download resume')
         return
       }
 
-      // Check if response is PDF (server-side Puppeteer) or HTML (fallback)
-      const contentType = response.headers.get('content-type') || ''
-      
-      if (contentType.includes('application/pdf')) {
-        // Server generated PDF - download directly
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        const filename = pdfType === 'a4' 
-          ? `${resume?.title || 'resume'}-professional.pdf`
-          : `${resume?.title || 'resume'}-web.pdf`
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-      } else {
-        // Fallback: HTML response (Puppeteer failed) - use client-side generation
-        const htmlContent = await response.text()
-        
-        // Use the visible preview element that's already rendered correctly
-        const previewElement = document.querySelector('[data-resume-preview]') as HTMLElement
-        
-        if (!previewElement) {
-          alert('Preview element not found. Please refresh the page.')
-          return
-        }
-
-        // Dynamic import for PDF generation (fallback only)
-        const { default: jsPDF } = await import('jspdf')
-        const html2canvas = (await import('html2canvas')).default
-
-        // Create a deep clone with all styles preserved
-        const clone = previewElement.cloneNode(true) as HTMLElement
-        
-        // Set up clone for PDF generation
-        clone.style.position = 'absolute'
-        clone.style.left = '-9999px'
-        clone.style.width = '8.5in'
-        clone.style.maxWidth = '8.5in'
-        clone.style.margin = '0'
-        clone.style.padding = '0'
-        clone.style.backgroundColor = '#ffffff'
-        clone.style.overflow = 'visible'
-        
-        document.body.appendChild(clone)
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        const canvas = await html2canvas(clone, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: false,
-          logging: false,
-          backgroundColor: '#ffffff',
-        })
-        
-        document.body.removeChild(clone)
-        await generatePDFFromCanvas(canvas)
-      }
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${resume?.title || 'resume'}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
     } catch (error) {
       console.error('PDF generation error:', error)
       alert('Failed to generate PDF. Please try again.')
     }
-  }
-
-  const generatePDFFromCanvas = async (canvas: HTMLCanvasElement) => {
-    const { default: jsPDF } = await import('jspdf')
-    
-    // Use high quality image
-    const imgData = canvas.toDataURL('image/png', 1.0)
-    const pageWidth = 816 // 8.5 inches at 96 DPI
-    const pageHeight = 1056 // 11 inches (standard US letter height)
-    
-    // Calculate image dimensions maintaining aspect ratio
-    const imgWidth = pageWidth
-    const imgHeight = (canvas.height * pageWidth) / canvas.width
-
-    // Only create PDF if there's actual content (height > 0)
-    if (imgHeight <= 0) {
-      alert('No content to export. Please add content to your resume.')
-      return
-    }
-
-    // Create PDF with letter size
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'pt',
-      format: 'letter',
-      compress: false, // Disable compression for better quality
-      precision: 16, // High precision
-    })
-
-    // Calculate how many pages we need
-    const totalPages = Math.ceil(imgHeight / pageHeight)
-    
-    // Add first page
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'SLOW', 0)
-
-    // Add additional pages if content spans multiple pages
-    if (totalPages > 1) {
-      for (let i = 1; i < totalPages; i++) {
-        const yPosition = -(i * pageHeight)
-        // Only add page if there's content on this page
-        if (yPosition + imgHeight > -pageHeight) {
-          pdf.addPage('letter', 'portrait')
-          pdf.addImage(imgData, 'PNG', 0, yPosition, imgWidth, imgHeight, undefined, 'SLOW', 0)
-        }
-      }
-    }
-
-    pdf.save(`${resume?.title || 'resume'}.pdf`)
   }
 
   if (loading) {
@@ -608,6 +513,17 @@ export default function ResumeEditorPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      <WizardProgress
+        completedSections={{
+          contacts: !!(data.personalInfo.fullName && data.personalInfo.email),
+          experience: data.workExperience.length > 0,
+          education: data.education.length > 0,
+          skills: data.skills.length > 0 && data.skills.some(s => s.items.length > 0),
+          summary: !!data.summary,
+          finalize: !!(data.certifications?.length || data.languages?.length),
+        }}
+        activeSection={undefined}
+      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
           <div className="flex-1 min-w-0">
@@ -716,9 +632,9 @@ export default function ResumeEditorPage() {
           {/* Form Section */}
           <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
             {/* Personal Info */}
-            <Card data-section="personalInfo">
+            <Card id="section-personal" data-section="personalInfo">
               <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
+                <CardTitle>Contact Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {resume?.template?.supportsPhoto && (
@@ -833,7 +749,7 @@ export default function ResumeEditorPage() {
             </Card>
 
             {/* Summary */}
-            <Card data-section="summary">
+            <Card id="section-summary" data-section="summary">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3">
                 <CardTitle className="text-base sm:text-lg">Professional Summary</CardTitle>
                 <AIButton
@@ -892,7 +808,7 @@ export default function ResumeEditorPage() {
             </Card>
 
             {/* Work Experience */}
-            <Card data-section="workExperience">
+            <Card id="section-experience" data-section="workExperience">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3">
                 <CardTitle className="text-base sm:text-lg">Work Experience</CardTitle>
                 <Button
@@ -1105,7 +1021,7 @@ export default function ResumeEditorPage() {
             </Card>
 
             {/* Skills */}
-            <Card data-section="skills">
+            <Card id="section-skills" data-section="skills">
               <CardHeader className="flex items-center justify-between">
                 <CardTitle>Skills</CardTitle>
                 <div className="flex gap-2">
@@ -1225,7 +1141,7 @@ export default function ResumeEditorPage() {
             </Card>
 
             {/* Education */}
-            <Card data-section="education">
+            <Card id="section-education" data-section="education">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3">
                 <CardTitle className="text-base sm:text-lg">Education</CardTitle>
                 <Button
@@ -1347,6 +1263,147 @@ export default function ResumeEditorPage() {
                     </div>
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+
+            {/* Finalize — Additional Sections */}
+            <Card id="section-finalize">
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg">Additional Sections</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-500">Add certifications, languages, or other details to strengthen your resume.</p>
+
+                {/* Certifications */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-semibold text-sm">Certifications</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => {
+                        const certs = data.certifications || []
+                        setData({
+                          ...data,
+                          certifications: [...certs, { name: '', issuer: '', date: '' }],
+                        })
+                      }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> Add
+                    </Button>
+                  </div>
+                  {(data.certifications || []).map((cert, idx) => (
+                    <div key={idx} className="flex gap-2 items-start">
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <Input
+                          placeholder="Certification name"
+                          value={cert.name || ''}
+                          onChange={(e) => {
+                            const updated = [...(data.certifications || [])]
+                            updated[idx] = { ...updated[idx], name: e.target.value }
+                            setData({ ...data, certifications: updated })
+                          }}
+                          className="text-sm"
+                        />
+                        <Input
+                          placeholder="Issuer"
+                          value={cert.issuer || ''}
+                          onChange={(e) => {
+                            const updated = [...(data.certifications || [])]
+                            updated[idx] = { ...updated[idx], issuer: e.target.value }
+                            setData({ ...data, certifications: updated })
+                          }}
+                          className="text-sm"
+                        />
+                        <Input
+                          type="month"
+                          value={cert.date || ''}
+                          onChange={(e) => {
+                            const updated = [...(data.certifications || [])]
+                            updated[idx] = { ...updated[idx], date: e.target.value }
+                            setData({ ...data, certifications: updated })
+                          }}
+                          className="text-sm"
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => {
+                          const updated = (data.certifications || []).filter((_, i) => i !== idx)
+                          setData({ ...data, certifications: updated })
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Languages */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-semibold text-sm">Languages</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => {
+                        const langs = data.languages || []
+                        setData({
+                          ...data,
+                          languages: [...langs, { language: '', proficiency: 'Intermediate' }],
+                        })
+                      }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> Add
+                    </Button>
+                  </div>
+                  {(data.languages || []).map((lang, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <Input
+                        placeholder="Language"
+                        value={lang.language || ''}
+                        onChange={(e) => {
+                          const updated = [...(data.languages || [])]
+                          updated[idx] = { ...updated[idx], language: e.target.value }
+                          setData({ ...data, languages: updated })
+                        }}
+                        className="flex-1 text-sm"
+                      />
+                      <select
+                        value={lang.proficiency || 'Intermediate'}
+                        onChange={(e) => {
+                          const updated = [...(data.languages || [])]
+                          updated[idx] = { ...updated[idx], proficiency: e.target.value }
+                          setData({ ...data, languages: updated })
+                        }}
+                        className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="Native">Native</option>
+                        <option value="Fluent">Fluent</option>
+                        <option value="Advanced">Advanced</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Basic">Basic</option>
+                      </select>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => {
+                          const updated = (data.languages || []).filter((_, i) => i !== idx)
+                          setData({ ...data, languages: updated })
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
 

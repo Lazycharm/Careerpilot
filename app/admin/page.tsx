@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Navbar } from '@/components/shared/Navbar'
-import { Users, Settings, TrendingUp, FileText, Target, MessageSquare, LayoutTemplate, DollarSign, AlertTriangle } from 'lucide-react'
+import { Users, Settings, TrendingUp, FileText, Target, MessageSquare, LayoutTemplate, DollarSign, AlertTriangle, Building2, Shield, Mail, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface AdminStats {
@@ -313,37 +313,79 @@ export default function AdminDashboardPage() {
               </CardHeader>
             </Card>
           </Link>
+
+          <Link href="/admin/templates">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <LayoutTemplate className="h-10 w-10 text-orange-600 mb-2" />
+                <CardTitle>Resume Templates</CardTitle>
+                <CardDescription>Add, edit, and manage resume templates</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/admin/companies">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <Building2 className="h-10 w-10 text-teal-600 mb-2" />
+                <CardTitle>Companies</CardTitle>
+                <CardDescription>Manage target companies for automation</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/admin/email-campaigns">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <Mail className="h-10 w-10 text-indigo-600 mb-2" />
+                <CardTitle>Email Campaigns</CardTitle>
+                <CardDescription>Create and send marketing email campaigns</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/admin/automations">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <Zap className="h-10 w-10 text-yellow-600 mb-2" />
+                <CardTitle>Automation Monitor</CardTitle>
+                <CardDescription>Monitor all user automations and runs</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/admin/audit-logs">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <Shield className="h-10 w-10 text-red-600 mb-2" />
+                <CardTitle>Audit Logs</CardTitle>
+                <CardDescription>View security and activity audit trail</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
         </div>
 
-        {/* Template Management */}
+        {/* Template Seed (Quick Action) */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <LayoutTemplate className="h-5 w-5" />
-              Resume Templates
+              Quick: Seed Default Templates
             </CardTitle>
-            <CardDescription>
-              Manage and seed resume templates for the platform
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={handleSeedTemplates}
-                disabled={seedingTemplates}
-                className="min-w-[200px]"
-              >
-                {seedingTemplates ? 'Seeding...' : 'Seed Templates'}
-              </Button>
-              {templateMessage && (
-                <p className={`text-sm ${templateMessage.startsWith('✅') ? 'text-green-600' : 'text-red-600'}`}>
-                  {templateMessage}
-                </p>
-              )}
-            </div>
-            <p className="text-sm text-gray-600">
-              This will create or update 6 professional resume templates: Modern Professional, Classic Traditional, Creative Design, Timeline, Minimalist, and Executive.
-            </p>
+          <CardContent className="flex items-center gap-4">
+            <Button
+              onClick={handleSeedTemplates}
+              disabled={seedingTemplates}
+              variant="outline"
+            >
+              {seedingTemplates ? 'Seeding...' : 'Seed Templates'}
+            </Button>
+            {templateMessage && (
+              <p className={`text-sm ${templateMessage.startsWith('✅') ? 'text-green-600' : 'text-red-600'}`}>
+                {templateMessage}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

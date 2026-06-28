@@ -1,6 +1,15 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+/**
+ * PDFPreviewDialog — Phase 1 rewrite.
+ *
+ * Renders the actual server-generated PDF in an iframe (was: html2canvas
+ * screenshot of an HTML proxy, which lied about the true layout). The dialog
+ * fetches /api/resumes/preview as a Blob and shows it via `URL.createObjectURL`,
+ * giving the user a true WYSIWYG preview before they download.
+ */
+
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { X, Download, Loader2 } from 'lucide-react'
@@ -23,27 +32,28 @@ export function PDFPreviewDialog({
   resumeData,
   templateKey,
   supportsPhoto = false,
-  resumeTitle = 'resume',
 }: PDFPreviewDialogProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) {
-      setPreviewUrl(null)
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev)
+        return null
+      })
       setError(null)
       return
     }
 
+    let cancelled = false
+    let createdUrl: string | null = null
+
     const generatePreview = async () => {
       setLoading(true)
       setError(null)
-
       try {
-        // Get HTML content from server
         const response = await fetch('/api/resumes/preview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -55,51 +65,33 @@ export function PDFPreviewDialog({
         })
 
         if (!response.ok) {
-          throw new Error('Failed to generate preview')
+          const msg = await response
+            .json()
+            .then((j) => j?.error)
+            .catch(() => null)
+          throw new Error(msg || `Preview failed (${response.status})`)
         }
 
-        const htmlContent = await response.text()
-
-        // Create a temporary container for rendering
-        const tempContainer = document.createElement('div')
-        tempContainer.style.position = 'absolute'
-        tempContainer.style.left = '-9999px'
-        tempContainer.style.width = '8.5in'
-        tempContainer.style.backgroundColor = '#fff'
-        tempContainer.innerHTML = htmlContent
-        document.body.appendChild(tempContainer)
-
-        // Wait for images and styles to load
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // Import html2canvas
-        const html2canvas = (await import('html2canvas')).default
-
-        // Generate canvas
-        const canvas = await html2canvas(tempContainer, {
-          scale: 1.5,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          width: tempContainer.scrollWidth,
-          height: tempContainer.scrollHeight,
-        })
-
-        // Clean up
-        document.body.removeChild(tempContainer)
-
-        // Convert canvas to image URL
-        const imageUrl = canvas.toDataURL('image/png', 0.95)
-        setPreviewUrl(imageUrl)
-      } catch (err: any) {
-        console.error('Preview generation error:', err)
-        setError(err.message || 'Failed to generate preview')
+        const blob = await response.blob()
+        if (cancelled) return
+        createdUrl = URL.createObjectURL(blob)
+        setPreviewUrl(createdUrl)
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Preview generation error:', err)
+          setError(err instanceof Error ? err.message : 'Failed to generate preview')
+        }
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     generatePreview()
+
+    return () => {
+      cancelled = true
+      if (createdUrl) URL.revokeObjectURL(createdUrl)
+    }
   }, [open, resumeData, templateKey, supportsPhoto])
 
   const handleDownload = () => {
@@ -117,15 +109,10 @@ export function PDFPreviewDialog({
             <div>
               <CardTitle className="text-lg sm:text-xl">PDF Preview</CardTitle>
               <p className="text-sm text-gray-500 mt-1">
-                Preview how your resume will look when downloaded
+                Exactly how your resume will look when downloaded
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8"
-            >
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -149,27 +136,20 @@ export function PDFPreviewDialog({
 
           {previewUrl && !loading && (
             <div className="flex flex-col items-center">
-              <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-4 w-full">
-                <img
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-4 w-full min-h-[500px]">
+                <iframe
                   src={previewUrl}
-                  alt="PDF Preview"
-                  className="w-full h-auto"
-                  style={{ maxWidth: '100%' }}
+                  title="Resume PDF preview"
+                  className="w-full"
+                  style={{ height: '70vh', border: 0 }}
                 />
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Button
-                  onClick={handleDownload}
-                  className="w-full sm:w-auto"
-                >
+                <Button onClick={handleDownload} className="w-full sm:w-auto">
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF
                 </Button>
-                <Button
-                  onClick={onClose}
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                >
+                <Button onClick={onClose} variant="outline" className="w-full sm:w-auto">
                   Close Preview
                 </Button>
               </div>

@@ -80,30 +80,39 @@ export default function SubscriptionPage() {
   }
 
   const handleSubscribe = async () => {
+    // Phase 5: migrated from legacy /api/payments/create to the new
+    // /api/payments/intent dual-rail endpoint. We resolve enabled methods
+    // first so the user is sent through whichever rail admin has on.
     setProcessing(true)
     try {
-      const subscriptionPrice = pricing?.subscriptionPrice || 100
-      
-      const response = await fetch('/api/payments/create', {
+      const methodsRes = await fetch('/api/payments/methods', { cache: 'no-store' })
+      const methodsJson = (await methodsRes.json()) as { methods?: Array<'whatsapp' | 'ziina'> }
+      const enabled = methodsJson.methods ?? []
+      if (enabled.length === 0) {
+        alert('Payments are temporarily unavailable. Please try again later.')
+        return
+      }
+      // Prefer Ziina for direct online checkout; fall back to WhatsApp.
+      const method: 'whatsapp' | 'ziina' = enabled.includes('ziina') ? 'ziina' : 'whatsapp'
+
+      const response = await fetch('/api/payments/intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'subscription',
-          amount: subscriptionPrice,
-          redirect: window.location.pathname,
+          pricingCode: 'monthly',
+          method,
         }),
       })
 
       if (response.ok) {
-        const data = await response.json()
-        // Redirect to Ziina payment page
-        if (data.paymentUrl) {
-          window.location.href = data.paymentUrl
+        const data = (await response.json()) as { redirectUrl?: string }
+        if (data.redirectUrl) {
+          window.location.href = data.redirectUrl
         } else {
-          alert('Payment URL not received')
+          alert('Redirect URL not received')
         }
       } else {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({}))
         alert(error.error || 'Failed to create payment')
       }
     } catch (error) {
@@ -203,10 +212,17 @@ export default function SubscriptionPage() {
                         </li>
                       </ul>
                       {!isActive && (
-                        <Button onClick={handleSubscribe} disabled={processing} className="w-full min-h-[48px] text-base sm:text-lg">
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          {processing ? 'Processing...' : 'Subscribe Now'}
-                        </Button>
+                        <>
+                          <Button onClick={handleSubscribe} disabled={processing} className="w-full min-h-[48px] text-base sm:text-lg">
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            {processing ? 'Processing...' : 'Unlock Full Access'}
+                          </Button>
+                          <div className="flex flex-wrap items-center justify-center gap-3 mt-3 text-xs text-gray-500">
+                            <span className="flex items-center gap-1">🔒 Secure checkout</span>
+                            <span className="flex items-center gap-1">↩️ Cancel anytime</span>
+                            <span className="flex items-center gap-1">🛡️ Data encrypted</span>
+                          </div>
+                        </>
                       )}
                     </div>
                   </>

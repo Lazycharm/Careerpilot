@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { FileText, MessageSquare, Target, Settings, LogOut, User, Menu, X, ChevronDown } from 'lucide-react'
+import { FileText, MessageSquare, Target, Settings, LogOut, User, Menu, X, ChevronDown, Zap } from 'lucide-react'
 
 export function Navbar() {
   const { data: session } = useSession()
@@ -48,6 +48,7 @@ export function Navbar() {
     { href: '/resume', label: 'Resume', icon: FileText, pathMatch: (p: string) => p?.startsWith('/resume') },
     { href: '/cover-letter', label: 'Cover Letter', icon: MessageSquare, pathMatch: (p: string) => p?.startsWith('/cover-letter') },
     { href: '/interview', label: 'Interview', icon: Target, pathMatch: (p: string) => p?.startsWith('/interview') },
+    { href: '/automation', label: 'Automation', icon: Zap, pathMatch: (p: string) => p?.startsWith('/automation') },
   ]
 
   if (isAdmin) {

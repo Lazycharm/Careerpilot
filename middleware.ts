@@ -35,6 +35,9 @@ export default withAuth(
     callbacks: {
       authorized: ({ token }) => !!token,
     },
+    // Without this, NextAuth's withAuth bounces unauthenticated users to its
+    // default /api/auth/signin page instead of our branded login screen.
+    pages: { signIn: '/auth/login' },
   }
 )
 

@@ -1,73 +1,59 @@
-// PDF Generator for Resumes
-// Uses jsPDF and html2canvas for client-side PDF generation
-// Server-side alternative using Puppeteer can be added later
+/**
+ * Resume PDF generator (Phase 1 rewrite).
+ *
+ * Previous pipeline: html2canvas → image → jsPDF.addImage()  ── produced
+ *   image-only PDFs that no ATS could parse, were 2-10 MB, and rendered
+ *   inconsistently across devices. That code path has been removed.
+ *
+ * Current pipeline: server-side @react-pdf/renderer with template components
+ *   from lib/pdf/templates. Output is a real text-layer PDF, ATS-friendly,
+ *   typically 10-60 KB, deterministic across devices, with automatic page
+ *   breaks and proper font metrics.
+ *
+ * Public API kept compatible at the call-site level: the export route at
+ * app/api/resumes/[id]/export/route.ts calls `generateResumePDFServer(data,
+ * template)` and receives a Node Buffer it can send as the response body.
+ *
+ * Browser callers should fetch the PDF from the export API (`fetch(...).blob()`)
+ * rather than generating on the client. Client-side PDF generation has been
+ * intentionally removed — see docs/PHASE_1_NOTES.md for the rationale.
+ */
 
 import type { ResumeData } from '@/types'
-import { renderResumeToHTML, type TemplateConfig } from './templateRenderer'
+import { renderResumeBuffer, renderResumeStream } from '@/lib/pdf/render'
+import { getTemplate, type TemplateMeta } from '@/lib/pdf/registry'
 
-// Client-side PDF generation (for browser)
-export async function generateResumePDF(
-  data: ResumeData,
-  template: TemplateConfig,
-  filename: string = 'resume.pdf'
-): Promise<Blob> {
-  // Dynamic import for client-side only
-  const { default: jsPDF } = await import('jspdf')
-  const html2canvas = (await import('html2canvas')).default
-
-  // Create a temporary container
-  const container = document.createElement('div')
-  container.style.position = 'absolute'
-  container.style.left = '-9999px'
-  container.style.width = '8.5in'
-  container.innerHTML = renderResumeToHTML(data, template)
-  document.body.appendChild(container)
-
-  try {
-    // Convert HTML to canvas
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      width: 816, // 8.5in at 96 DPI
-      height: container.scrollHeight,
-    })
-
-    // Create PDF
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'pt',
-      format: [816, canvas.height * (816 / canvas.width)], // Maintain aspect ratio
-    })
-
-    const imgData = canvas.toDataURL('image/png')
-    const imgWidth = 816
-    const imgHeight = (canvas.height * 816) / canvas.width
-
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
-
-    // Clean up
-    document.body.removeChild(container)
-
-    return pdf.output('blob')
-  } catch (error) {
-    document.body.removeChild(container)
-    throw error
-  }
+/** Legacy-compatible TemplateConfig type, mapped through the new registry. */
+export interface TemplateConfig {
+  id: string
+  name: string
+  supportsPhoto: boolean
+  /** Preferred — points to a key in TEMPLATE_REGISTRY. */
+  templateKey?: string
+  styles?: string
 }
 
-// Server-side PDF generation helper (for API routes)
-// This would require Puppeteer or similar
+/**
+ * Server-side render. Returns a Node Buffer suitable for:
+ *  - sending as a Next.js Response body (Content-Type: application/pdf)
+ *  - uploading to Supabase Storage
+ *  - hashing for an export receipt
+ */
 export async function generateResumePDFServer(
   data: ResumeData,
   template: TemplateConfig
 ): Promise<Buffer> {
-  // For now, return HTML that can be converted server-side
-  // In production, use Puppeteer or similar
-  const html = renderResumeToHTML(data, template)
-  
-  // TODO: Implement server-side PDF generation with Puppeteer
-  // For now, this is a placeholder
-  throw new Error('Server-side PDF generation not yet implemented. Use client-side generation.')
+  const meta = resolveTemplate(template)
+  const { buffer } = await renderResumeBuffer({ data, templateKey: meta.key })
+  return buffer
 }
 
+/** Streaming variant — preferred for large multi-page CVs. */
+export async function generateResumePDFStream(data: ResumeData, template: TemplateConfig) {
+  const meta = resolveTemplate(template)
+  return renderResumeStream({ data, templateKey: meta.key })
+}
+
+function resolveTemplate(template: TemplateConfig): TemplateMeta {
+  return getTemplate(template.templateKey ?? template.id)
+}

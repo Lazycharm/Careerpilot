@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { recordActivity } from '@/lib/activity'
 
 export async function GET() {
   try {
@@ -111,6 +112,12 @@ export async function POST(request: Request) {
         status: 'draft',
       },
     })
+
+    recordActivity({
+      userId: session.user.id,
+      event: 'resume.created',
+      meta: { resumeId: resume.id, templateId: finalTemplateId },
+    }).catch(() => {})
 
     return NextResponse.json(resume, { status: 201 })
   } catch (error) {

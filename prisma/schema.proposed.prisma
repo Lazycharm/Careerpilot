@@ -1,0 +1,671 @@
+// CareerPilot — Proposed Prisma schema (rebuild target)
+// Status: PROPOSAL — do not run `prisma migrate` against this yet.
+// All FKs indexed. Soft delete on user-facing entities. PII encrypted at app layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum UserRole              { user admin staff }
+enum DocumentType          { resume cover_letter ats_report tailored_resume tailored_cover_letter }
+enum ResumeStatus          { draft completed archived }
+enum InterviewStatus       { in_progress completed abandoned }
+enum QuestionType          { hr technical behavioral situational role_specific industry_specific }
+enum SubscriptionStatus    { trialing active expired cancelled past_due paused }
+enum PaymentStatus         { created pending_whatsapp pending_ziina approved rejected refunded failed }
+enum PaymentMethod         { whatsapp ziina manual_other }
+enum NotificationChannel   { in_app email whatsapp push }
+enum AutomationStatus      { active paused completed errored }
+enum AutomationRunStatus   { queued running succeeded partial failed }
+enum ATSScoreType          { ats recruiter readability industry_match uae_hiring }
+enum AIProviderCode        { claude openai mock }
+enum AIUseCase             { cv_summary cv_bullets cover_letter interview_questions interview_feedback ats_feedback tailor_cv tailor_cl application_email }
+
+// ─── Identity ───────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String?
+  name            String
+  role            UserRole  @default(user)
+  emailVerified   DateTime?
+  locale          String    @default("en-AE")
+  whatsappNumber  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  profile         UserProfile?
+  resumes         Resume[]
+  coverLetters    CoverLetter[]
+  interviews      InterviewSession[]
+  documents       Document[]
+  folders         Folder[]
+  subscription    Subscription?
+  payments        Payment[]
+  aiUsage         AIUsage[]
+  emailAccounts   EmailAccount[]
+  automations     Automation[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  activityLogs    ActivityLog[]
+  pdfExports      PDFExport[]
+  atsReports      ATSReport[]
+
+  @@index([deletedAt])
+  @@index([createdAt])
+}
+
+model UserProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  phoneEncrypted  String?
+  locationCity    String?
+  locationCountry String   @default("UAE")
+  industry        String?
+  experienceLevel String?
+  yearsExperience Int?
+  visaStatus      String?
+  emiratization   Boolean? // self-declared
+  linkedinUrl     String?
+  portfolioUrl    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Resumes / Templates ────────────────────────────────────────────────────
+
+model Template {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  name            String
+  category        String   // modern, classic, executive, creative, minimal
+  industry        String?  // banking, hospitality, tech, healthcare, etc.
+  role            String?  // optional role specialization
+  language        String   @default("en") // en, ar
+  supportsPhoto   Boolean  @default(false)
+  isPremium       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  previewImageUrl String?
+  pdfReactKey     String   // points to lib/pdf/react-pdf/<Key>.tsx
+  styleTokens     Json     // colors, fonts, spacing config
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  resumes         Resume[]
+
+  @@index([category, isActive])
+  @@index([industry])
+  @@index([language])
+}
+
+model Resume {
+  id          String       @id @default(uuid())
+  userId      String
+  templateId  String
+  folderId    String?
+  title       String
+  data        Json         // structured CV data (Zod-validated at write)
+  customization Json?      // user color/font overrides
+  status      ResumeStatus @default(draft)
+  wordCount   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template    Template     @relation(fields: [templateId], references: [id])
+  folder      Folder?      @relation(fields: [folderId], references: [id])
+  versions    ResumeVersion[]
+  document    Document?
+  atsReports  ATSReport[]
+  pdfExports  PDFExport[]
+
+  @@index([userId, status])
+  @@index([userId, deletedAt])
+  @@index([folderId])
+  @@index([updatedAt])
+}
+
+model ResumeVersion {
+  id         String   @id @default(uuid())
+  resumeId   String
+  label      String?
+  data       Json
+  createdAt  DateTime @default(now())
+
+  resume     Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId, createdAt])
+}
+
+// ─── Cover Letters ──────────────────────────────────────────────────────────
+
+model CoverLetter {
+  id          String   @id @default(uuid())
+  userId      String
+  folderId    String?
+  resumeId    String?  // optional pairing
+  jobTitle    String
+  industry    String
+  companyId   String?
+  tone        String   @default("professional")
+  content     String   @db.Text
+  aiProvider  AIProviderCode?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder      Folder?  @relation(fields: [folderId], references: [id])
+  company     Company? @relation(fields: [companyId], references: [id])
+  document    Document?
+  pdfExports  PDFExport[]
+
+  @@index([userId, deletedAt])
+  @@index([folderId])
+}
+
+// ─── Interviews ─────────────────────────────────────────────────────────────
+
+model InterviewSession {
+  id              String           @id @default(uuid())
+  userId          String
+  jobTitle        String
+  industry        String
+  experienceLevel String
+  companyId       String?
+  status          InterviewStatus  @default(in_progress)
+  readinessScore  Int?
+  confidenceScore Int?
+  strengths       String?          @db.Text
+  weaknesses      String?          @db.Text
+  recommendations String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         Company?         @relation(fields: [companyId], references: [id])
+  questions       InterviewQuestion[]
+
+  @@index([userId, status])
+}
+
+model InterviewQuestion {
+  id          String       @id @default(uuid())
+  sessionId   String
+  question    String       @db.Text
+  type        QuestionType
+  expectedSkills String?   @db.Text
+  createdAt   DateTime     @default(now())
+
+  session     InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  answer      InterviewAnswer?
+}
+
+model InterviewAnswer {
+  id          String   @id @default(uuid())
+  questionId  String   @unique
+  answer      String   @db.Text
+  score       Int?
+  feedback    String?  @db.Text
+  aiProvider  AIProviderCode?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  question    InterviewQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+// ─── Documents (unified parent) ─────────────────────────────────────────────
+
+model Folder {
+  id        String   @id @default(uuid())
+  userId    String
+  parentId  String?
+  name      String
+  color     String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Folder?   @relation("FolderTree", fields: [parentId], references: [id])
+  children  Folder[]  @relation("FolderTree")
+  resumes   Resume[]
+  coverLetters CoverLetter[]
+  documents Document[]
+
+  @@index([userId, parentId])
+}
+
+model Document {
+  id            String       @id @default(uuid())
+  userId        String
+  folderId      String?
+  type          DocumentType
+  resumeId      String?      @unique
+  coverLetterId String?      @unique
+  atsReportId   String?      @unique
+  title         String
+  tags          String[]
+  downloadCount Int          @default(0)
+  lastDownloadAt DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder        Folder?      @relation(fields: [folderId], references: [id])
+  resume        Resume?      @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  coverLetter   CoverLetter? @relation(fields: [coverLetterId], references: [id], onDelete: Cascade)
+  atsReport     ATSReport?   @relation(fields: [atsReportId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, deletedAt])
+  @@index([folderId])
+}
+
+// ─── ATS Reports ────────────────────────────────────────────────────────────
+
+model ATSReport {
+  id            String   @id @default(uuid())
+  userId        String
+  resumeId      String
+  jobDescription String? @db.Text
+  scores        Json     // { ats: 0-100, recruiter, readability, industryMatch, uaeHiring }
+  suggestions   Json     // structured suggestions per section
+  keywords      Json     // { matched: [], missing: [] }
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  document      Document?
+
+  @@index([userId])
+  @@index([resumeId, createdAt])
+}
+
+// ─── PDF Exports ────────────────────────────────────────────────────────────
+
+model PDFExport {
+  id              String   @id @default(uuid())
+  userId          String
+  resumeId        String?
+  coverLetterId   String?
+  fileSizeBytes   Int?
+  pageCount       Int?
+  language        String   @default("en")
+  templateKey     String?
+  storageKey      String?  // Supabase storage object key
+  signedUrlExpiry DateTime?
+  status          String   @default("queued") // queued|rendering|ready|failed
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume          Resume?      @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  coverLetter     CoverLetter? @relation(fields: [coverLetterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+// ─── Companies ──────────────────────────────────────────────────────────────
+
+model Company {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  logoUrl     String?
+  website     String?
+  industry    String?
+  category    String?  // retail, airline, ecommerce, telco, etc.
+  hqCity      String?
+  hqCountry   String   @default("UAE")
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contacts        CompanyContact[]
+  coverLetters    CoverLetter[]
+  interviews      InterviewSession[]
+  automations     Automation[]
+  applications    AutomationApplication[]
+
+  @@index([industry, isActive])
+}
+
+model CompanyContact {
+  id        String   @id @default(uuid())
+  companyId String
+  role      String?  // HR, Recruiter, Hiring Manager
+  email     String
+  name      String?
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, email])
+}
+
+// ─── Subscriptions, Pricing, Payments ───────────────────────────────────────
+
+model Pricing {
+  id              String   @id @default(uuid())
+  code            String   @unique   // free, premium_bundle, tailored_pack, weekly, two_week, monthly, auto_weekly, auto_two_week, auto_monthly
+  name            String
+  description     String?
+  amountFils      Int                // 0 for free
+  currency        String   @default("AED")
+  durationDays    Int?               // null for one-shot bundles
+  isActive        Boolean  @default(true)
+  features        Json               // { downloads, tailored, automation, etc. }
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  payments        Payment[]
+  subscriptions   Subscription[]
+}
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  pricingId          String?
+  status             SubscriptionStatus @default(active)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  pausedAt           DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pricing            Pricing?           @relation(fields: [pricingId], references: [id])
+
+  @@index([status, currentPeriodEnd])
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  userId          String
+  pricingId       String
+  method          PaymentMethod
+  status          PaymentStatus @default(created)
+  amountFils      Int
+  currency        String        @default("AED")
+  ziinaIntentId   String?       @unique
+  whatsappRequestText String?   @db.Text
+  proofUrls       String[]      // uploaded screenshots from admin queue
+  adminNote       String?       @db.Text
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectedReason  String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pricing         Pricing @relation(fields: [pricingId], references: [id])
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model WhatsAppTemplate {
+  id        String   @id @default(uuid())
+  code      String   @unique // payment_request, payment_approved, payment_rejected, etc.
+  body      String   @db.Text // supports {{mergeTags}}
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+// ─── AI usage + settings ────────────────────────────────────────────────────
+
+model AIUsage {
+  id                    String   @id @default(uuid())
+  userId                String
+  month                 Int
+  year                  Int
+  resumesGenerated      Int      @default(0)
+  coverLettersGenerated Int      @default(0)
+  interviewGenerated    Int      @default(0)
+  tailoringGenerated    Int      @default(0)
+  applicationEmails     Int      @default(0)
+  tokensIn              Int      @default(0)
+  tokensOut             Int      @default(0)
+  costUsdMicros         Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, year])
+}
+
+model AISetting {
+  id          String       @id @default(uuid())
+  useCase     AIUseCase    @unique
+  provider    AIProviderCode @default(claude)
+  fallback    AIProviderCode @default(openai)
+  model       String       // e.g. "claude-sonnet-4-6", "gpt-4o-mini"
+  temperature Float        @default(0.7)
+  maxTokens   Int          @default(1500)
+  systemPrompt String      @db.Text
+  isEnabled   Boolean      @default(true)
+  updatedAt   DateTime     @updatedAt
+}
+
+// ─── Automation ─────────────────────────────────────────────────────────────
+
+model EmailAccount {
+  id             String   @id @default(uuid())
+  userId         String
+  provider       String   // gmail, smtp
+  emailAddress   String
+  displayName    String?
+  oauthTokensEnc String?  @db.Text // encrypted refresh tokens
+  smtpHostEnc    String?  @db.Text
+  isActive       Boolean  @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  automations    Automation[]
+
+  @@unique([userId, emailAddress])
+}
+
+model Automation {
+  id              String           @id @default(uuid())
+  userId          String
+  emailAccountId  String
+  resumeId        String?
+  coverLetterId   String?
+  name            String
+  status          AutomationStatus @default(active)
+  targetCompanyIds String[]
+  industries      String[]
+  schedule        Json             // cron + timezone + daily cap + working hours
+  generatePerCompany Boolean       @default(true)
+  startAt         DateTime?
+  endAt           DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailAccount    EmailAccount @relation(fields: [emailAccountId], references: [id])
+  companies       Company[]
+  runs            AutomationRun[]
+  applications    AutomationApplication[]
+
+  @@index([userId, status])
+}
+
+model AutomationRun {
+  id            String              @id @default(uuid())
+  automationId  String
+  startedAt     DateTime            @default(now())
+  endedAt       DateTime?
+  status        AutomationRunStatus @default(queued)
+  applicationsSent Int              @default(0)
+  errorSummary  String?             @db.Text
+
+  automation    Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  applications  AutomationApplication[]
+
+  @@index([automationId, startedAt])
+}
+
+model AutomationApplication {
+  id            String   @id @default(uuid())
+  automationId  String
+  runId         String?
+  companyId     String?
+  toEmail       String
+  subject       String
+  bodyPreview   String   @db.Text
+  pdfResumeKey  String?
+  pdfCoverKey   String?
+  messageId     String?
+  status        String   // queued, sent, bounced, failed
+  errorMessage  String?
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  automation    Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  run           AutomationRun? @relation(fields: [runId], references: [id])
+  company       Company? @relation(fields: [companyId], references: [id])
+
+  @@index([automationId, status])
+}
+
+// ─── Email campaigns / notifications ───────────────────────────────────────
+
+model EmailCampaign {
+  id           String   @id @default(uuid())
+  name         String
+  subject      String
+  bodyHtml     String   @db.Text
+  bodyText     String?  @db.Text
+  segmentRule  Json     // filter against User attributes
+  status       String   @default("draft") // draft, scheduled, sending, sent, paused
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  createdBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String
+  channel   NotificationChannel
+  title     String
+  body      String              @db.Text
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+// ─── SEO surfaces ───────────────────────────────────────────────────────────
+
+model BlogPost {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  excerpt     String   @db.Text
+  bodyMdx     String   @db.Text
+  coverImage  String?
+  tags        String[]
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+  author      String
+  seoTitle    String?
+  seoDesc     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model IndustryPage {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  content     String   @db.Text
+  templates   String[] // template slugs to feature
+  faqs        Json?
+  isPublished Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+}
+
+model CityPage {
+  id          String   @id @default(uuid())
+  slug        String   @unique // dubai, abu-dhabi, sharjah, etc.
+  title       String
+  content     String   @db.Text
+  faqs        Json?
+  isPublished Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Settings / observability ──────────────────────────────────────────────
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  description String?
+  updatedBy String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  action    String   // e.g. "payment.approve"
+  target    String?  // e.g. "payment:abc-123"
+  before    Json?
+  after     Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  event     String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([event, createdAt])
+}

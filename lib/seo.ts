@@ -63,7 +63,7 @@ export function generateMetadata(config: SEOConfig): Metadata {
   }
 }
 
-export function generateStructuredData(type: 'WebSite' | 'SoftwareApplication' | 'FAQPage', data: any) {
+export function generateStructuredData(type: string, data: any) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://careerpilot.ae'
 
   const baseStructuredData = {
