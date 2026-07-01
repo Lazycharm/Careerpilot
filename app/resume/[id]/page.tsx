@@ -18,6 +18,9 @@ import { CustomizationPanel } from '@/components/resume/CustomizationPanel'
 import { PDFPreviewDialog } from '@/components/resume/PDFPreviewDialog'
 import { WizardProgress } from '@/components/resume/WizardProgress'
 import { defaultCustomization } from '@/lib/resume/customization'
+import { SuggestInput } from '@/components/ui/suggest-input'
+import { SkillTagInput } from '@/components/ui/skill-tag-input'
+import { UAE_LOCATIONS, JOB_TITLES, EDUCATION_FIELDS } from '@/lib/suggestions'
 
 export default function ResumeEditorPage() {
   const { data: session } = useSession()
@@ -735,14 +738,13 @@ export default function ResumeEditorPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Location</Label>
-                  <Input
+                  <SuggestInput
                     value={data.personalInfo.location}
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        personalInfo: { ...data.personalInfo, location: e.target.value },
-                      })
+                    onChange={(val) =>
+                      setData({ ...data, personalInfo: { ...data.personalInfo, location: val } })
                     }
+                    suggestions={UAE_LOCATIONS}
+                    placeholder="City, Country"
                   />
                 </div>
               </CardContent>
@@ -868,26 +870,29 @@ export default function ResumeEditorPage() {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Position</Label>
-                        <Input
+                        <SuggestInput
                           value={exp.position}
-                          onChange={(e) => {
+                          onChange={(val) => {
                             const updated = [...data.workExperience]
-                            updated[idx].position = e.target.value
+                            updated[idx].position = val
                             setData({ ...data, workExperience: updated })
                           }}
+                          suggestions={JOB_TITLES}
+                          placeholder="e.g., Software Engineer"
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Location</Label>
-                        <Input
+                        <SuggestInput
                           value={exp.location || ''}
-                          onChange={(e) => {
+                          onChange={(val) => {
                             const updated = [...data.workExperience]
-                            updated[idx].location = e.target.value
+                            updated[idx].location = val
                             setData({ ...data, workExperience: updated })
                           }}
+                          suggestions={UAE_LOCATIONS}
                           placeholder="City, Country"
                         />
                       </div>
@@ -1107,14 +1112,14 @@ export default function ResumeEditorPage() {
                             setData({ ...data, skills: updated })
                           }}
                         />
-                        <Input
-                          placeholder="Comma-separated skills"
-                          value={(skillGroup.items || []).join(', ')}
-                          onChange={(e) => {
+                        <SkillTagInput
+                          value={skillGroup.items || []}
+                          onChange={(items) => {
                             const updated = [...data.skills]
-                            updated[idx].items = e.target.value.split(',').map(s => s.trim()).filter(s => s)
+                            updated[idx].items = items
                             setData({ ...data, skills: updated })
                           }}
+                          placeholder="Type a skill and press Enter…"
                         />
                       </div>
                       <Button
@@ -1212,13 +1217,14 @@ export default function ResumeEditorPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Field of Study</Label>
-                        <Input
+                        <SuggestInput
                           value={edu.field || ''}
-                          onChange={(e) => {
+                          onChange={(val) => {
                             const updated = [...data.education]
-                            updated[idx].field = e.target.value
+                            updated[idx].field = val
                             setData({ ...data, education: updated })
                           }}
+                          suggestions={EDUCATION_FIELDS}
                           placeholder="e.g., Computer Science"
                         />
                       </div>

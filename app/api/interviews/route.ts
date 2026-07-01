@@ -2,62 +2,52 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { generateInterviewQuestions } from '@/lib/ai'
+import { aiGenerate } from '@/lib/ai/router'
 import { getSettingAsBoolean } from '@/lib/settings'
 import { checkAILimit, incrementAIUsage, AI_LIMIT_EXCEEDED_MESSAGE } from '@/lib/aiUsage'
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const sessions = await prisma.interviewSession.findMany({
       where: { userId: session.user.id },
       orderBy: { updatedAt: 'desc' },
       include: {
-        questions: {
-          include: {
-            answer: true,
-          },
-        },
+        questions: { include: { answer: true } },
       },
     })
 
     return NextResponse.json(sessions)
   } catch (error) {
-    console.error('Interviews fetch error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[interviews.GET]', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+const FALLBACK_QUESTIONS = [
+  'Tell me about yourself.',
+  'Why are you interested in this position?',
+  'What are your greatest strengths?',
+  'What is an area you are working to improve?',
+  'Why do you want to work in the UAE?',
+]
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     await checkAILimit(session.user.id, 'interview')
 
     const interviewEnabled = await getSettingAsBoolean('interview_prep_enabled')
     if (!interviewEnabled) {
-      return NextResponse.json(
-        { error: 'Interview preparation is currently disabled' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Interview preparation is currently disabled' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -70,33 +60,32 @@ export async function POST(request: Request) {
       )
     }
 
-    // Generate interview questions
     const aiEnabled = await getSettingAsBoolean('ai_features_enabled')
-    let questions: string[] = []
+    let questions: string[] = FALLBACK_QUESTIONS
 
     if (aiEnabled) {
-      questions = await generateInterviewQuestions(
-        jobTitle,
-        industry,
-        experienceLevel,
-        10
-      )
-    } else {
-      // Fallback questions if AI is disabled
-      questions = [
-        'Tell me about yourself.',
-        'Why are you interested in this position?',
-        'What are your strengths?',
-        'What are your weaknesses?',
-        'Why do you want to work in the UAE?',
-      ]
-    }
+      const result = await aiGenerate({
+        useCase: 'interview_questions',
+        systemPrompt: 'You are a UAE career coach. Generate practical interview questions relevant to UAE hiring practices. Return ONLY a numbered list — no preamble or explanations.',
+        prompt: `Generate 10 interview questions for a ${experienceLevel}-level ${jobTitle} role in the ${industry} industry in UAE.
 
-    if (aiEnabled) {
+Mix: UAE workplace culture, role-specific technical/functional, behavioral (STAR), and UAE-context questions.
+Format: numbered list, one per line.`,
+        temperature: 0.7,
+        maxTokens: 800,
+      })
+
+      const parsed = result.text
+        .split('\n')
+        .map((line: string) => line.replace(/^\d+[\.\)]\s*/, '').trim())
+        .filter((q: string) => q.length > 10)
+        .slice(0, 10)
+
+      if (parsed.length >= 3) questions = parsed
       await incrementAIUsage(session.user.id, 'interview')
     }
 
-    const session_data = await prisma.interviewSession.create({
+    const interviewSession = await prisma.interviewSession.create({
       data: {
         userId: session.user.id,
         jobTitle,
@@ -111,14 +100,12 @@ export async function POST(request: Request) {
           })),
         },
       },
-      include: {
-        questions: true,
-      },
+      include: { questions: true },
     })
 
-    return NextResponse.json(session_data, { status: 201 })
+    return NextResponse.json(interviewSession, { status: 201 })
   } catch (error: any) {
-    console.error('Interview creation error:', error)
+    console.error('[interviews.POST]', error)
     if (error.message === AI_LIMIT_EXCEEDED_MESSAGE) {
       return NextResponse.json({ error: AI_LIMIT_EXCEEDED_MESSAGE }, { status: 403 })
     }
@@ -128,4 +115,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

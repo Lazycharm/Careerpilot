@@ -46,7 +46,7 @@ export function SEOLanding(props: SEOLandingProps) {
             href="/auth/register"
             className="inline-flex items-center justify-center px-5 py-2.5 rounded-md bg-blue-700 text-white font-medium hover:bg-blue-800"
           >
-            Build my CV free
+            Build My CV Now
           </Link>
           <Link
             href="/products"
@@ -141,14 +141,13 @@ export function SEOLanding(props: SEOLandingProps) {
         <div className="mt-16 p-6 rounded-lg bg-blue-50 border border-blue-100">
           <h2 className="text-xl font-semibold mb-2">Ready to apply?</h2>
           <p className="text-gray-700 mb-4">
-            Build an ATS-safe CV in minutes. Free templates, paid tailored
-            versions for specific UAE employers.
+            Build an ATS-safe CV in minutes. AI-powered content, UAE-ready templates, and a professional PDF — ready to send to employers.
           </p>
           <Link
             href="/auth/register"
             className="inline-flex items-center justify-center px-5 py-2.5 rounded-md bg-blue-700 text-white font-medium hover:bg-blue-800"
           >
-            Start free
+            Get Started Now
           </Link>
         </div>
       </div>

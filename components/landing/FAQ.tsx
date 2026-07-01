@@ -10,8 +10,8 @@ const faqs = [
     answer: 'ATS (Applicant Tracking System) is software that employers use to filter resumes before a human ever sees them. An ATS-friendly resume uses proper formatting, keywords, and structure so it passes these filters. Every Career Pilot template is designed to score high on ATS scans.',
   },
   {
-    question: 'Do I need to pay to create a resume?',
-    answer: 'You can create and edit your resume for free. Premium features like downloading as PDF, AI-powered content generation, and access to premium templates require a subscription.',
+    question: 'What do I get with a subscription?',
+    answer: 'A subscription unlocks PDF downloads, unlimited AI-powered content generation, premium templates, cover letter creation, and interview prep with readiness scoring. You can explore the builder before subscribing — and unlock everything when you\'re ready to apply.',
   },
   {
     question: 'Can I upload my existing resume?',

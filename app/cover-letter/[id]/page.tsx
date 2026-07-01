@@ -6,7 +6,12 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Navbar } from '@/components/shared/Navbar'
-import { Save, Download, Sparkles, TrendingUp, Minus, Plus } from 'lucide-react'
+import { Save, Download, Sparkles, TrendingUp, Minus, Plus, Eye, LayoutTemplate } from 'lucide-react'
+import { CoverLetterPreview } from '@/components/coverLetter/CoverLetterPreview'
+import { listCLTemplates } from '@/lib/coverLetter/templates/registry'
+import type { CoverLetterData } from '@/lib/coverLetter/templates/types'
+
+const TEMPLATES = listCLTemplates()
 
 export default function CoverLetterViewPage() {
   const { data: session } = useSession()
@@ -19,23 +24,22 @@ export default function CoverLetterViewPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [customizing, setCustomizing] = useState<string | null>(null)
+  const [templateKey, setTemplateKey] = useState('classic')
+  const [showPreview, setShowPreview] = useState(true)
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false)
 
-  useEffect(() => {
-    if (letterId) {
-      fetchCoverLetter()
-    }
-  }, [letterId])
+  useEffect(() => { if (letterId) fetchCoverLetter() }, [letterId])
 
   const fetchCoverLetter = async () => {
     try {
-      const response = await fetch(`/api/cover-letters/${letterId}`)
-      if (response.ok) {
-        const data = await response.json()
+      const res = await fetch(`/api/cover-letters/${letterId}`)
+      if (res.ok) {
+        const data = await res.json()
         setCoverLetter(data)
         setContent(data.content)
       }
-    } catch (error) {
-      console.error('Failed to fetch cover letter:', error)
+    } catch (e) {
+      console.error('Failed to fetch cover letter', e)
     } finally {
       setLoading(false)
     }
@@ -44,16 +48,13 @@ export default function CoverLetterViewPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const response = await fetch(`/api/cover-letters/${letterId}`, {
+      const res = await fetch(`/api/cover-letters/${letterId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       })
-      if (response.ok) {
-        alert('Cover letter saved!')
-      }
-    } catch (error) {
-      console.error('Failed to save cover letter:', error)
+      if (!res.ok) throw new Error()
+    } catch {
       alert('Failed to save cover letter')
     } finally {
       setSaving(false)
@@ -63,21 +64,19 @@ export default function CoverLetterViewPage() {
   const handleCustomize = async (action: 'improve' | 'shorten' | 'elongate') => {
     setCustomizing(action)
     try {
-      const response = await fetch(`/api/cover-letters/${letterId}/customize`, {
+      const res = await fetch(`/api/cover-letters/${letterId}/customize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       })
-      if (response.ok) {
-        const data = await response.json()
+      if (res.ok) {
+        const data = await res.json()
         setContent(data.content)
-        alert(`Cover letter ${action}d successfully!`)
       } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to customize cover letter')
+        const err = await res.json()
+        alert(err.error || 'Failed to customize cover letter')
       }
-    } catch (error) {
-      console.error('Failed to customize cover letter:', error)
+    } catch {
       alert('Failed to customize cover letter')
     } finally {
       setCustomizing(null)
@@ -85,17 +84,14 @@ export default function CoverLetterViewPage() {
   }
 
   const handleDownload = async () => {
-    // Phase 1: server-side React-PDF rendering. We always expect a real PDF
-    // back from /api/cover-letters/[id]/export — the HTML/text fallbacks
-    // from the previous html2canvas pipeline have been removed.
     try {
-      const response = await fetch(`/api/cover-letters/${letterId}/export`)
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to generate PDF' }))
-        alert(error.error || 'Failed to download PDF')
+      const res = await fetch(`/api/cover-letters/${letterId}/export?template=${templateKey}`)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed to generate PDF' }))
+        alert(err.error || 'Failed to download PDF')
         return
       }
-      const blob = await response.blob()
+      const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -104,121 +100,21 @@ export default function CoverLetterViewPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } catch (error) {
-      console.error('Download error:', error)
+    } catch {
       alert('Failed to download cover letter')
     }
   }
 
-  // Parse and format the cover letter content for display (body and footer sectioned)
-  const FOOTER_STARTERS = /^(Sincerely|Best regards|Kind regards|Respectfully|Yours sincerely|Regards),?\s*$/i
-
-  const formatCoverLetterContent = (text: string) => {
-    const lines = text.split('\n')
-    const formattedLines: JSX.Element[] = []
-    let headerLines: string[] = []
-    let bodyStart = 0
-    let inHeader = false
-
-    // Find header section
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (line && !inHeader && (line.includes('@') || line.includes('Phone') || line.includes('Email') || line.includes('Location'))) {
-        inHeader = true
-        headerLines = []
-      }
-      if (inHeader && line) {
-        headerLines.push(line)
-        if (i < lines.length - 1 && lines[i + 1].trim() === '') {
-          inHeader = false
-          bodyStart = i + 1
-          break
-        }
-      }
-    }
-
-    // Render header (top right)
-    if (headerLines.length > 0) {
-      formattedLines.push(
-        <div key="header" className="text-right mb-8 space-y-1">
-          {headerLines.map((line, idx) => (
-            <div key={idx} className={idx === 0 ? 'text-xl font-bold' : 'text-sm text-gray-700'}>
-              {line}
-            </div>
-          ))}
-        </div>
-      )
-    }
-
-    const bodyLines = bodyStart > 0 ? lines.slice(bodyStart) : lines
-    const bodyContent: string[] = []
-    const footerLines: string[] = []
-    let inFooter = false
-
-    for (let i = 0; i < bodyLines.length; i++) {
-      const line = bodyLines[i].trim()
-      if (FOOTER_STARTERS.test(line)) {
-        inFooter = true
-        footerLines.push(line)
-        continue
-      }
-      if (inFooter) {
-        if (line) footerLines.push(line)
-        continue
-      }
-      bodyContent.push(bodyLines[i])
-    }
-
-    // Render body
-    let currentParagraph: string[] = []
-    bodyContent.forEach((line, idx) => {
-      const trimmed = line.trim()
-      if (trimmed === '') {
-        if (currentParagraph.length > 0) {
-          formattedLines.push(
-            <p key={`para-${idx}`} className="mb-4 text-gray-800 leading-relaxed">
-              {currentParagraph.join(' ')}
-            </p>
-          )
-          currentParagraph = []
-        }
-      } else if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
-        formattedLines.push(
-          <div key={`bullet-${idx}`} className="mb-2 ml-4 text-gray-800">
-            {trimmed}
-          </div>
-        )
-      } else {
-        currentParagraph.push(trimmed)
-      }
-    })
-    if (currentParagraph.length > 0) {
-      formattedLines.push(
-        <p key="last-para" className="mb-4 text-gray-800 leading-relaxed">
-          {currentParagraph.join(' ')}
-        </p>
-      )
-    }
-
-    // Render footer as a distinct section (spacing + structure)
-    if (footerLines.length > 0) {
-      const closing = footerLines.map(l => l.trim()).filter(Boolean)[0] || ''
-      const signature = footerLines.map(l => l.trim()).filter(Boolean)[1] || ''
-      formattedLines.push(
-        <div key="footer" className="mt-10 pt-6 border-t-0">
-          <div className="text-gray-800">{closing}</div>
-          {signature && <div className="font-semibold text-gray-900 mt-2">{signature}</div>}
-        </div>
-      )
-    }
-
-    return formattedLines.length > 0 ? formattedLines : <div className="whitespace-pre-wrap text-gray-800">{text}</div>
+  const previewData: CoverLetterData = {
+    content,
+    jobTitle: coverLetter?.jobTitle,
+    companyName: coverLetter?.companyName,
   }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     )
   }
@@ -226,122 +122,141 @@ export default function CoverLetterViewPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-bold">{coverLetter?.jobTitle || 'Cover Letter'}</h1>
-            <p className="text-gray-600">{coverLetter?.industry}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">{coverLetter?.jobTitle || 'Cover Letter'}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{coverLetter?.industry}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={handleSave} disabled={saving}>
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Saving...' : 'Save'}
+            <Button variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)} className="gap-1.5">
+              <Eye className="h-4 w-4" />
+              {showPreview ? 'Hide Preview' : 'Show Preview'}
             </Button>
-            <Button variant="outline" onClick={handleDownload}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
+            <Button variant="outline" size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+              <Save className="h-4 w-4" />
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+            <Button size="sm" onClick={handleDownload} className="gap-1.5 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 border-0">
+              <Download className="h-4 w-4" />
+              Download PDF
             </Button>
           </div>
         </div>
 
-        {/* AI Customization Buttons */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-              AI Customization
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-3 flex-wrap">
-              <Button
-                variant="outline"
-                onClick={() => handleCustomize('improve')}
-                disabled={customizing !== null}
-                className="flex-1 min-w-[120px]"
-              >
-                {customizing === 'improve' ? (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                    Improving...
-                  </>
-                ) : (
-                  <>
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Improve
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleCustomize('shorten')}
-                disabled={customizing !== null}
-                className="flex-1 min-w-[120px]"
-              >
-                {customizing === 'shorten' ? (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                    Shortening...
-                  </>
-                ) : (
-                  <>
-                    <Minus className="h-4 w-4 mr-2" />
-                    Shorten
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleCustomize('elongate')}
-                disabled={customizing !== null}
-                className="flex-1 min-w-[120px]"
-              >
-                {customizing === 'elongate' ? (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                    Elongating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Elongate
-                  </>
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 mt-3">
-              Use AI to improve, shorten, or expand your cover letter while maintaining professional format
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col xl:flex-row gap-6">
+          {/* Editor column */}
+          <div className="flex-1 space-y-4 min-w-0">
+            {/* AI Tools */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Sparkles className="h-4 w-4 text-violet-600" />
+                  AI Tools
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex gap-2 flex-wrap">
+                {[
+                  { action: 'improve' as const, label: 'Improve', icon: TrendingUp },
+                  { action: 'shorten' as const, label: 'Shorten', icon: Minus },
+                  { action: 'elongate' as const, label: 'Expand', icon: Plus },
+                ].map(({ action, label, icon: Icon }) => (
+                  <Button
+                    key={action}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCustomize(action)}
+                    disabled={customizing !== null}
+                    className="gap-1.5 flex-1 min-w-[100px]"
+                  >
+                    {customizing === action ? (
+                      <Sparkles className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Icon className="h-3.5 w-3.5" />
+                    )}
+                    {customizing === action ? `${label}ing…` : label}
+                  </Button>
+                ))}
+              </CardContent>
+            </Card>
 
-        {/* Cover Letter Display */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Cover Letter</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Formatted Preview */}
-            <div className="bg-white p-8 min-h-[600px] border border-gray-200 rounded-lg mb-4">
-              <div className="max-w-2xl mx-auto">
-                {formatCoverLetterContent(content)}
+            {/* Template Selector */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <LayoutTemplate className="h-4 w-4 text-blue-600" />
+                    Template — {TEMPLATES.find((t) => t.key === templateKey)?.name}
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => setShowTemplateSelector(!showTemplateSelector)}
+                  >
+                    {showTemplateSelector ? 'Close' : 'Change'}
+                  </Button>
+                </div>
+              </CardHeader>
+              {showTemplateSelector && (
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {TEMPLATES.map((t) => (
+                      <button
+                        key={t.key}
+                        onClick={() => { setTemplateKey(t.key); setShowTemplateSelector(false) }}
+                        className={`rounded-lg border-2 p-2.5 text-left transition-all ${
+                          templateKey === t.key
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-400'
+                        }`}
+                      >
+                        <div
+                          className="w-full h-1.5 rounded-full mb-1.5"
+                          style={{ background: t.accentColor }}
+                        />
+                        <p className="text-xs font-semibold text-gray-900 leading-tight">{t.name}</p>
+                        <p className="text-[10px] text-gray-500 mt-0.5 leading-tight line-clamp-2">{t.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+
+            {/* Text editor */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Edit Content</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <textarea
+                  className="w-full min-h-[500px] rounded-md border border-input bg-background px-4 py-3 text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Cover letter content…"
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Live Preview column */}
+          {showPreview && (
+            <div className="xl:w-[420px] flex-shrink-0">
+              <div className="sticky top-24">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Live Preview</p>
+                  <p className="text-[10px] text-gray-400">Matches your PDF output</p>
+                </div>
+                <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg bg-white">
+                  <CoverLetterPreview data={previewData} templateKey={templateKey} />
+                </div>
               </div>
             </div>
-
-            {/* Editable Textarea */}
-            <div className="mt-4">
-              <label className="text-sm font-medium mb-2 block">Edit Content</label>
-              <textarea
-                className="w-full min-h-[400px] rounded-md border border-input bg-background px-4 py-3 text-sm font-mono"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Cover letter content will appear here..."
-              />
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     </div>
   )
 }
-

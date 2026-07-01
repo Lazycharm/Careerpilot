@@ -299,7 +299,7 @@ export default function AdminDashboardPage() {
               <CardHeader>
                 <Settings className="h-10 w-10 text-purple-600 mb-2" />
                 <CardTitle>Platform Settings</CardTitle>
-                <CardDescription>Configure features, pricing, and toggles</CardDescription>
+                <CardDescription>Homepage CMS, AI features, pricing, limits, notifications</CardDescription>
               </CardHeader>
             </Card>
           </Link>

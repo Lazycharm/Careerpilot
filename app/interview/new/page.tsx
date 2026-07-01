@@ -3,11 +3,20 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Navbar } from '@/components/shared/Navbar'
-import { Target } from 'lucide-react'
+import { Target, Sparkles } from 'lucide-react'
+import { SuggestInput } from '@/components/ui/suggest-input'
+import { JOB_TITLES } from '@/lib/suggestions'
+
+const INDUSTRIES = [
+  'Technology', 'Finance & Banking', 'Healthcare', 'Real Estate',
+  'Retail & E-commerce', 'Hospitality & Tourism', 'Oil & Gas', 'Construction',
+  'Education', 'Legal', 'Marketing & Advertising', 'Logistics & Supply Chain',
+  'Human Resources', 'Consulting', 'Media & Communications', 'Aviation',
+  'Government & Public Sector', 'Manufacturing', 'Telecommunications', 'Insurance',
+]
 
 export default function NewInterviewPage() {
   const router = useRouter()
@@ -38,7 +47,7 @@ export default function NewInterviewPage() {
       } else {
         setError(data.error || 'Failed to create interview session')
       }
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
@@ -48,52 +57,56 @@ export default function NewInterviewPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-6 w-6 text-green-600" />
-              Start Interview Preparation
-            </CardTitle>
-            <CardDescription>
-              Get personalized interview questions and practice for your next job interview
-            </CardDescription>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 max-w-2xl">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                <Target className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg sm:text-xl">Start Interview Preparation</CardTitle>
+                <CardDescription className="text-sm mt-0.5">
+                  Get AI-generated questions tailored to your role and level
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
+                <div className="bg-red-50 text-red-700 border border-red-200 text-sm p-3 rounded-md">
                   {error}
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="jobTitle">Job Title *</Label>
-                <Input
+              <div className="space-y-1.5">
+                <Label htmlFor="jobTitle">Job Title <span className="text-red-500">*</span></Label>
+                <SuggestInput
                   id="jobTitle"
                   placeholder="e.g., Software Engineer, Sales Executive"
                   value={formData.jobTitle}
-                  onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                  required
+                  onChange={(val) => setFormData({ ...formData, jobTitle: val })}
+                  suggestions={JOB_TITLES}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="industry">Industry *</Label>
-                <Input
+              <div className="space-y-1.5">
+                <Label htmlFor="industry">Industry <span className="text-red-500">*</span></Label>
+                <SuggestInput
                   id="industry"
                   placeholder="e.g., Technology, Finance, Healthcare"
                   value={formData.industry}
-                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                  required
+                  onChange={(val) => setFormData({ ...formData, industry: val })}
+                  suggestions={INDUSTRIES}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="experienceLevel">Experience Level *</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="experienceLevel">Experience Level <span className="text-red-500">*</span></Label>
                 <select
                   id="experienceLevel"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   value={formData.experienceLevel}
                   onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
                   required
@@ -105,16 +118,22 @@ export default function NewInterviewPage() {
                 </select>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
                 <Button
                   type="button"
                   variant="outline"
+                  className="min-h-[44px]"
                   onClick={() => router.back()}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Creating...' : 'Start Practice'}
+                <Button
+                  type="submit"
+                  disabled={loading || !formData.jobTitle || !formData.industry}
+                  className="flex-1 min-h-[44px] gap-2 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 border-0"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {loading ? 'Generating questions…' : 'Start Practice'}
                 </Button>
               </div>
             </form>
@@ -124,4 +143,3 @@ export default function NewInterviewPage() {
     </div>
   )
 }
-

@@ -1,9 +1,9 @@
 /**
- * GET /api/cover-letters/[id]/export
+ * GET /api/cover-letters/[id]/export?template=classic
  *
- * Phase 1 rewrite — drops Puppeteer + html2pdf.fly.dev fallback. Uses the new
- * React-PDF server renderer (lib/coverLetter/pdfGenerator → renderCoverLetterPDF).
- * Entitlement logic preserved verbatim from the original implementation.
+ * Renders cover letter to PDF using the HTML+Puppeteer engine (same approach
+ * as resume export). Accepts ?template= query param to pick from 11 templates.
+ * Falls back to 'classic' if not provided or invalid.
  */
 
 import { NextResponse } from 'next/server'
@@ -11,12 +11,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPlanType } from '@/lib/subscription'
-import { renderCoverLetterPDF } from '@/lib/coverLetter/pdfGenerator'
 import { rateLimit, identifyRequest, rateLimited } from '@/lib/security/rate-limit'
 
 export const runtime = 'nodejs'
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -24,11 +23,11 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     }
 
     const { success, reset } = await rateLimit('ai').limit(
-      identifyRequest(_request, session.user.id)
+      identifyRequest(request, session.user.id)
     )
     if (!success) return rateLimited(reset)
 
-    // ── Entitlement (preserved verbatim from prior implementation) ──
+    // ── Entitlement check ────────────────────────────────────────────────
     const planType = await getPlanType(session.user.id)
     if (planType === 'free') {
       return NextResponse.json(
@@ -38,19 +37,11 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     }
     if (planType === 'pay_per_download') {
       const credit = await prisma.download.findFirst({
-        where: {
-          userId: session.user.id,
-          type: 'cover_letter',
-          paid: true,
-          resumeId: null,
-        },
+        where: { userId: session.user.id, type: 'cover_letter', paid: true, resumeId: null },
       })
       if (!credit) {
         return NextResponse.json(
-          {
-            error: 'No download credit. Purchase a download to continue.',
-            requiresPayment: true,
-          },
+          { error: 'No download credit. Purchase a download to continue.', requiresPayment: true },
           { status: 403 }
         )
       }
@@ -58,11 +49,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     }
     if (planType === 'pro' || planType === 'business') {
       await prisma.download.create({
-        data: {
-          userId: session.user.id,
-          type: 'cover_letter',
-          paid: true,
-        },
+        data: { userId: session.user.id, type: 'cover_letter', paid: true },
       })
     }
 
@@ -73,12 +60,20 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Cover letter not found' }, { status: 404 })
     }
 
-    // Render the PDF. We do not have candidate/company fields on the model in
-    // Phase 1; the template gracefully handles missing metadata.
-    const { buffer } = await renderCoverLetterPDF({
+    // Get template from query param — e.g., ?template=executive
+    const url = new URL(request.url)
+    const templateKey = url.searchParams.get('template') || 'classic'
+
+    const { renderCoverLetterToPDF } = await import('@/lib/coverLetter/engine/renderCoverLetter')
+
+    // Build cover letter data for the template
+    const data = {
       content: coverLetter.content ?? '',
       jobTitle: coverLetter.jobTitle ?? undefined,
-    })
+      companyName: undefined as string | undefined,
+    }
+
+    const buffer = await renderCoverLetterToPDF(data, templateKey)
 
     const filename = `cover-letter-${sanitizeFilename(coverLetter.jobTitle) || 'letter'}.pdf`
     return new NextResponse(new Uint8Array(buffer), {

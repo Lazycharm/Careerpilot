@@ -10,6 +10,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Navbar } from '@/components/shared/Navbar'
 import { Sparkles, FileText, Calendar } from 'lucide-react'
 import type { ResumeData } from '@/types'
+import { SuggestInput } from '@/components/ui/suggest-input'
+import { JOB_TITLES } from '@/lib/suggestions'
+
+const INDUSTRIES = [
+  'Technology', 'Finance & Banking', 'Healthcare', 'Real Estate',
+  'Retail & E-commerce', 'Hospitality & Tourism', 'Oil & Gas', 'Construction',
+  'Education', 'Legal', 'Marketing & Advertising', 'Logistics & Supply Chain',
+  'Human Resources', 'Consulting', 'Media & Communications', 'Aviation',
+  'Government & Public Sector', 'Manufacturing', 'Telecommunications', 'Insurance',
+]
 
 interface Resume {
   id: string
@@ -154,23 +164,23 @@ export default function NewCoverLetterPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="jobTitle">Job Title *</Label>
-                <Input
+                <SuggestInput
                   id="jobTitle"
                   placeholder="e.g., Software Engineer"
                   value={formData.jobTitle}
-                  onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                  required
+                  onChange={(val) => setFormData({ ...formData, jobTitle: val })}
+                  suggestions={JOB_TITLES}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="industry">Industry *</Label>
-                <Input
+                <SuggestInput
                   id="industry"
                   placeholder="e.g., Technology, Finance, Healthcare"
                   value={formData.industry}
-                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                  required
+                  onChange={(val) => setFormData({ ...formData, industry: val })}
+                  suggestions={INDUSTRIES}
                 />
               </div>
 

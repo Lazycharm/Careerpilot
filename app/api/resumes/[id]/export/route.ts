@@ -16,12 +16,12 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPlanType } from '@/lib/subscription'
 import { getSettingAsBoolean } from '@/lib/settings'
-import { generateResumePDFServer } from '@/lib/resume/pdfGenerator'
+// Dynamic imports keep react-dom/server out of Next.js static bundle analysis.
+// These modules are server-only and only loaded at runtime in this Node route.
 import { rateLimit, identifyRequest, rateLimited } from '@/lib/security/rate-limit'
 import { recordActivity } from '@/lib/activity'
-import type { ResumeData } from '@/types'
 
-export const runtime = 'nodejs' // React-PDF needs Node.
+export const runtime = 'nodejs' // Puppeteer needs Node — not Edge.
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -95,7 +95,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       }
     }
 
-    // ── Resolve template ────────────────────────────────────────────────
+    // ── Resolve template key ────────────────────────────────────────────
     const template = await prisma.resumeTemplate.findUnique({
       where: { id: resume.templateId },
     })
@@ -104,15 +104,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
     const metadata = (template.metadata ?? {}) as Record<string, unknown>
     const templateKey =
-      typeof metadata.templateKey === 'string' ? metadata.templateKey : undefined
+      typeof metadata.templateKey === 'string' ? metadata.templateKey : 'dubai-classic'
 
-    // ── Render PDF ──────────────────────────────────────────────────────
-    const buffer = await generateResumePDFServer(resume.data as unknown as ResumeData, {
-      id: template.id,
-      name: template.name,
-      supportsPhoto: template.supportsPhoto ?? false,
-      templateKey,
-    })
+    // ── Render PDF via Puppeteer ────────────────────────────────────────
+    const [{ renderResumeToPDF }, { migrateResumeData }] = await Promise.all([
+      import('@/lib/resume/engine/renderResume'),
+      import('@/lib/resume/schema'),
+    ])
+    const resumeData = migrateResumeData(resume.data)
+    const buffer = await renderResumeToPDF(resumeData, templateKey)
 
     recordActivity({
       userId: session.user.id,
