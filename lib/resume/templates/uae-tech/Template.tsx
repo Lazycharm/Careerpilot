@@ -82,7 +82,9 @@ export function UAETechTemplate({ data }: TemplateProps) {
         <div className="rt-ut-sidebar">
           {photo && <img src={photo} alt="Photo" className="rt-ut-photo" />}
           <div className="rt-ut-name">{data.personalInfo.fullName || 'Your Name'}</div>
-          <div className="rt-ut-tagline">// Software Engineer</div>
+          {data.workExperience[0]?.position && (
+            <div className="rt-ut-tagline">{'// ' + data.workExperience[0].position}</div>
+          )}
 
           <div className="rt-ut-stitle-s">Contact</div>
           {data.personalInfo.email && <div className="rt-ut-contact-item">{data.personalInfo.email}</div>}
