@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
 import { Users } from 'lucide-react'
 
@@ -49,10 +50,15 @@ export default function AdminUsersPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <Skeleton className="h-9 w-48 mb-8" />
+          <Skeleton className="h-64 rounded-lg mb-4" />
+          <Skeleton className="h-12 rounded-lg" />
+        </div>
       </div>
     )
   }

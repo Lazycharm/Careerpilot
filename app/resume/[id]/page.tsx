@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Navbar } from '@/components/shared/Navbar'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Save, Download, Plus, Trash2, Sparkles, Eye } from 'lucide-react'
 import type { ResumeData } from '@/types'
 import { AIAssistant, AIButton } from '@/components/resume/AIAssistant'
@@ -507,8 +508,21 @@ export default function ResumeEditorPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-6">
+          <Skeleton className="h-2 w-full mb-6 rounded-full" />
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <Skeleton className="h-52 rounded-xl" />
+              <Skeleton className="h-52 rounded-xl" />
+              <Skeleton className="h-36 rounded-xl" />
+            </div>
+            <div className="hidden lg:block">
+              <Skeleton className="aspect-[8.5/11] w-full rounded-xl" />
+            </div>
+          </div>
+        </div>
       </div>
     )
   }

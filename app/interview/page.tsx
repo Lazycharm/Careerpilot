@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Navbar } from '@/components/shared/Navbar'
 import { Target, Plus, CheckCircle2, Clock, TrendingUp, Trash2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface InterviewSession {
   id: string
@@ -67,12 +68,18 @@ export default function InterviewListPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600" />
+        <div className="container mx-auto px-4 py-8 max-w-5xl">
+          <div className="flex items-center justify-between mb-8">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-10 w-40 rounded-lg" />
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
+          </div>
         </div>
       </div>
     )

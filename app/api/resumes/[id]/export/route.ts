@@ -105,6 +105,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const metadata = (template.metadata ?? {}) as Record<string, unknown>
     const templateKey =
       typeof metadata.templateKey === 'string' ? metadata.templateKey : 'dubai-classic'
+    const htmlContent =
+      metadata.isHtmlTemplate === true && typeof metadata.htmlContent === 'string'
+        ? metadata.htmlContent
+        : undefined
 
     // ── Render PDF via Puppeteer ────────────────────────────────────────
     const [{ renderResumeToPDF }, { migrateResumeData }] = await Promise.all([
@@ -112,7 +116,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       import('@/lib/resume/schema'),
     ])
     const resumeData = migrateResumeData(resume.data)
-    const buffer = await renderResumeToPDF(resumeData, templateKey)
+    const buffer = await renderResumeToPDF(resumeData, templateKey, htmlContent)
 
     recordActivity({
       userId: session.user.id,

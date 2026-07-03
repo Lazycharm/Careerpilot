@@ -13,6 +13,7 @@ import {
   Settings, Save, Globe, Sparkles, DollarSign, ToggleLeft,
   FileText, Home, Bell, Shield, Zap, ChevronRight, Check,
 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface Setting {
   key: string
@@ -159,10 +160,21 @@ export default function AdminSettingsPage() {
 
   const val = (key: string) => settings[key] ?? SETTING_DEFS.find((d) => d.key === key)?.default ?? ''
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <Skeleton className="h-9 w-56 mb-8" />
+          <div className="grid lg:grid-cols-4 gap-8">
+            <div className="space-y-2">
+              {Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}
+            </div>
+            <div className="lg:col-span-3 space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }

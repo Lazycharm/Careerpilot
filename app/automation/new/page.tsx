@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
 import { ArrowLeft, Mail, Building2, AlertCircle } from 'lucide-react'
 
@@ -144,10 +145,16 @@ export default function NewAutomationPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Skeleton className="h-8 w-52 mb-6" />
+          <div className="space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
+          </div>
+        </div>
       </div>
     )
   }

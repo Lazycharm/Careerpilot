@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
 import { ArrowLeft, Play, Pause, Trash2, Mail, Building2, Send, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 
@@ -116,10 +117,16 @@ export default function AutomationDetailPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 max-w-3xl">
+          <Skeleton className="h-8 w-56 mb-2" />
+          <Skeleton className="h-4 w-40 mb-8" />
+          <Skeleton className="h-48 rounded-xl mb-4" />
+          <Skeleton className="h-32 rounded-xl" />
+        </div>
       </div>
     )
   }

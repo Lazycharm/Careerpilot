@@ -17,6 +17,50 @@ import { getHtmlTemplate } from '@/lib/resume/templates/registry'
 import type { ResumeData } from '@/lib/resume/schema'
 import { launchBrowser } from './browser'
 
+function renderHtmlTemplateContent(html: string, data: ResumeData): string {
+  const pi = data.personalInfo
+
+  const exp = (data.workExperience || [])
+    .map(
+      (e) =>
+        `<div style="margin-bottom:12px"><strong>${e.position || ''}</strong> at ${e.company || ''} (${e.startDate || ''} – ${e.current ? 'Present' : e.endDate || 'Present'})<br/>${Array.isArray(e.description) ? e.description.join(' ') : e.description || ''}</div>`
+    )
+    .join('')
+
+  const edu = (data.education || [])
+    .map(
+      (e) =>
+        `<div style="margin-bottom:8px"><strong>${e.degree || ''}</strong>${e.field ? ` in ${e.field}` : ''}, ${e.institution || ''} (${e.endDate || ''})</div>`
+    )
+    .join('')
+
+  const skills = (data.skills || [])
+    .map((g) => g.items.join(', '))
+    .join(', ')
+
+  const certs = (data.certifications || [])
+    .map((c) => `<div>${c.name}${c.issuer ? ` — ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}</div>`)
+    .join('')
+
+  const langs = (data.languages || [])
+    .map((l) => `${l.language}${l.proficiency ? ` (${l.proficiency})` : ''}`)
+    .join(', ')
+
+  return html
+    .replace(/\{\{fullName\}\}/g, pi.fullName || '')
+    .replace(/\{\{email\}\}/g, pi.email || '')
+    .replace(/\{\{phone\}\}/g, pi.phone || '')
+    .replace(/\{\{location\}\}/g, pi.location || '')
+    .replace(/\{\{linkedin\}\}/g, pi.linkedIn || '')
+    .replace(/\{\{website\}\}/g, pi.website || '')
+    .replace(/\{\{summary\}\}/g, data.summary || '')
+    .replace(/\{\{experience\}\}/g, exp)
+    .replace(/\{\{education\}\}/g, edu)
+    .replace(/\{\{skills\}\}/g, skills)
+    .replace(/\{\{certifications\}\}/g, certs)
+    .replace(/\{\{languages\}\}/g, langs)
+}
+
 const PAGE_RESET = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   @page { margin: 0; size: A4; }
@@ -25,7 +69,16 @@ const PAGE_RESET = `
 
 const GOOGLE_IMPORT_RE = /@import\s+url\(['"]?(https:\/\/fonts\.googleapis\.com[^'")\s]+)['"]?\)\s*;?/gi
 
-export function renderResumeToHTML(data: ResumeData, templateKey: string): string {
+export function renderResumeToHTML(data: ResumeData, templateKey: string, htmlContent?: string): string {
+  // HTML template creator path — raw HTML with {{placeholder}} substitution
+  if (htmlContent) {
+    const substituted = renderHtmlTemplateContent(htmlContent, data)
+    const fullDoc = substituted.includes('<!DOCTYPE') || substituted.includes('<html')
+      ? substituted
+      : `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><style>${PAGE_RESET}</style></head><body>${substituted}</body></html>`
+    return fullDoc
+  }
+
   // require() is used intentionally here: Next.js's RSC webpack plugin blocks
   // static `import … from 'react-dom/server'` even in server-only API routes.
   const { renderToStaticMarkup } = require('react-dom/server') as typeof import('react-dom/server')
@@ -67,9 +120,10 @@ export function renderResumeToHTML(data: ResumeData, templateKey: string): strin
 
 export async function renderResumeToPDF(
   data: ResumeData,
-  templateKey: string
+  templateKey: string,
+  htmlContent?: string
 ): Promise<Buffer> {
-  const html = renderResumeToHTML(data, templateKey)
+  const html = renderResumeToHTML(data, templateKey, htmlContent)
   const browser = await launchBrowser()
   const page = await browser.newPage()
 

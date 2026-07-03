@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
 import { Zap, Pause, Play, ArrowLeft, Mail, Building2, Send, Clock } from 'lucide-react'
 import Link from 'next/link'
@@ -66,7 +67,17 @@ export default function AdminAutomationsPage() {
   }
 
   if (status === 'loading' || loading) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <Skeleton className="h-9 w-48 mb-6" />
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const active = automations.filter(a => a.status === 'active').length

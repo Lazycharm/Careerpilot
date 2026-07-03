@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Navbar } from '@/components/shared/Navbar'
 import { User, Mail, Lock, Shield, LogOut, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ProfilePage() {
   const { data: session, status, update } = useSession()
@@ -99,8 +100,11 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="flex items-center justify-center py-24">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Skeleton className="h-24 w-full rounded-xl mb-6" />
+          <div className="space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+          </div>
         </div>
       </div>
     )

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
 import { CheckCircle2, XCircle, CreditCard } from 'lucide-react'
 
@@ -123,10 +124,17 @@ export default function SubscriptionPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64 mb-8" />
+          <div className="grid sm:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-xl" />)}
+          </div>
+        </div>
       </div>
     )
   }

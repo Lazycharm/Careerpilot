@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
 import { Save, Sparkles } from 'lucide-react'
 
@@ -79,8 +80,14 @@ export default function AnswerQuestionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-6 max-w-3xl">
+          <Skeleton className="h-6 w-32 mb-4" />
+          <Skeleton className="h-24 rounded-xl mb-6" />
+          <Skeleton className="h-40 rounded-xl mb-4" />
+          <Skeleton className="h-10 w-32 rounded-lg" />
+        </div>
       </div>
     )
   }

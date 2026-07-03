@@ -21,6 +21,7 @@ import {
   Brain,
 } from 'lucide-react'
 import { Navbar } from '@/components/shared/Navbar'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface RecentResume {
   id: string
@@ -132,13 +133,20 @@ export default function DashboardPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="container mx-auto px-4 py-16 flex flex-col items-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4" />
-          <p className="text-sm text-gray-500">Loading your dashboard…</p>
+        <div className="container mx-auto px-4 py-8">
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-48 mb-8" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+          </div>
+          <div className="grid lg:grid-cols-2 gap-6">
+            <Skeleton className="h-64 rounded-xl" />
+            <Skeleton className="h-64 rounded-xl" />
+          </div>
         </div>
       </div>
     )

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Navbar } from '@/components/shared/Navbar'
 import { Mail, Plus, Trash2, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface EmailAccount {
   id: string
@@ -20,9 +21,23 @@ interface EmailAccount {
   createdAt: string
 }
 
+function EmailAccountsFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <Skeleton className="h-8 w-52 mb-6" />
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function EmailAccountsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>}>
+    <Suspense fallback={<EmailAccountsFallback />}>
       <EmailAccountsContent />
     </Suspense>
   )
@@ -77,10 +92,16 @@ function EmailAccountsContent() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Skeleton className="h-8 w-52 mb-6" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+          </div>
+        </div>
       </div>
     )
   }

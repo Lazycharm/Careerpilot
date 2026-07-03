@@ -10,7 +10,7 @@ export interface TemplateProps {
 export interface HtmlTemplateMeta {
   key: string
   name: string
-  category: 'classic' | 'executive' | 'minimal' | 'modern'
+  category: 'classic' | 'executive' | 'minimal' | 'modern' | 'creative' | 'premium' | 'specialty' | 'ats'
   industries: string[]
   isPremium: boolean
   supportsPhoto: boolean

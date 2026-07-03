@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
 import { Users, Settings, TrendingUp, FileText, Target, MessageSquare, LayoutTemplate, DollarSign, AlertTriangle, Building2, Shield, Mail, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -124,10 +125,24 @@ export default function AdminDashboardPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <Skeleton className="h-9 w-56 mb-8" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-lg" />
+            ))}
+          </div>
+          <Skeleton className="h-64 rounded-lg mb-8" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 rounded-lg" />
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -340,6 +355,16 @@ export default function AdminDashboardPage() {
                 <Mail className="h-10 w-10 text-indigo-600 mb-2" />
                 <CardTitle>Email Campaigns</CardTitle>
                 <CardDescription>Create and send marketing email campaigns</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/admin/cover-letters">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <Mail className="h-10 w-10 text-pink-600 mb-2" />
+                <CardTitle>Cover Letter Templates</CardTitle>
+                <CardDescription>Manage available cover letter templates for users</CardDescription>
               </CardHeader>
             </Card>
           </Link>

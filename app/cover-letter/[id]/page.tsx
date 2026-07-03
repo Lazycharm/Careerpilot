@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
 import { Save, Download, Sparkles, TrendingUp, Minus, Plus, Eye, LayoutTemplate } from 'lucide-react'
 import { CoverLetterPreview } from '@/components/coverLetter/CoverLetterPreview'
@@ -113,8 +114,18 @@ export default function CoverLetterViewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-6 max-w-4xl">
+          <Skeleton className="h-8 w-64 mb-6" />
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <Skeleton className="h-40 rounded-xl" />
+              <Skeleton className="h-40 rounded-xl" />
+            </div>
+            <Skeleton className="h-96 rounded-xl" />
+          </div>
+        </div>
       </div>
     )
   }
