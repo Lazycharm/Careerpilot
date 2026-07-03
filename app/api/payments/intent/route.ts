@@ -22,6 +22,7 @@ export const dynamic = 'force-dynamic'
 const RequestSchema = z.object({
   pricingCode: z.string().min(1),
   method: z.enum(['whatsapp', 'ziina']),
+  couponCode: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 })
 
@@ -53,6 +54,7 @@ export async function POST(req: Request) {
       userName: session.user.name ?? 'Customer',
       pricingCode: parsed.data.pricingCode,
       method: parsed.data.method,
+      couponCode: parsed.data.couponCode,
       successBaseUrl: `${baseUrl}/payments/success`,
       cancelBaseUrl: `${baseUrl}/payments/cancel`,
       metadata: parsed.data.metadata,

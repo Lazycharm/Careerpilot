@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
-import { Users, Settings, TrendingUp, FileText, Target, MessageSquare, LayoutTemplate, DollarSign, AlertTriangle, Building2, Shield, Mail, Zap } from 'lucide-react'
+import { Users, Settings, TrendingUp, FileText, Target, MessageSquare, LayoutTemplate, DollarSign, AlertTriangle, Building2, Shield, Mail, Zap, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface AdminStats {
@@ -375,6 +375,16 @@ export default function AdminDashboardPage() {
                 <Zap className="h-10 w-10 text-yellow-600 mb-2" />
                 <CardTitle>Automation Monitor</CardTitle>
                 <CardDescription>Monitor all user automations and runs</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/admin/coupons">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <Tag className="h-10 w-10 text-emerald-600 mb-2" />
+                <CardTitle>Coupons</CardTitle>
+                <CardDescription>Create and manage discount coupon codes</CardDescription>
               </CardHeader>
             </Card>
           </Link>

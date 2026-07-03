@@ -23,6 +23,7 @@ import {
 import { createZiinaIntent } from './ziina'
 import { env } from '@/lib/env'
 import { getPaymentSettings } from './settings'
+import { validateCoupon } from '@/lib/coupons/validate'
 
 /** Methods currently enabled for the user. Empty array → checkout disabled. */
 export async function getEnabledPaymentMethods(): Promise<PaymentMethod[]> {
@@ -41,6 +42,8 @@ export interface CreatePaymentInput {
   /** Where the user should land after Ziina success — caller supplies base URL. */
   successBaseUrl: string
   cancelBaseUrl: string
+  /** Optional coupon code to apply. */
+  couponCode?: string
   /** Optional arbitrary context (resumeId, coverLetterId, etc.). */
   metadata?: Record<string, unknown>
 }
@@ -60,6 +63,26 @@ export async function createPayment(input: CreatePaymentInput): Promise<CreatePa
     throw new PaymentError('This plan is free — no payment required', 'free_plan')
   }
 
+  // Resolve coupon discount
+  let couponId: string | undefined
+  let discountFils = 0
+  let finalAmountFils = pricing.amountFils
+
+  if (input.couponCode) {
+    const couponResult = await validateCoupon(
+      input.couponCode,
+      input.pricingCode,
+      pricing.amountFils,
+      input.userId
+    )
+    if (!couponResult.valid || !couponResult.coupon) {
+      throw new PaymentError(couponResult.error ?? 'Invalid coupon', 'invalid_coupon')
+    }
+    couponId = couponResult.coupon.id
+    discountFils = couponResult.coupon.discountFils
+    finalAmountFils = couponResult.coupon.finalAmountFils
+  }
+
   const settings = await getPaymentSettings()
 
   if (input.method === 'whatsapp') {
@@ -69,14 +92,14 @@ export async function createPayment(input: CreatePaymentInput): Promise<CreatePa
     if (!settings.whatsapp.adminNumber) {
       throw new PaymentError('Admin WhatsApp number is not configured', 'method_misconfigured')
     }
-    return await createWhatsAppPayment(input, pricing, settings.whatsapp)
+    return await createWhatsAppPayment(input, pricing, settings.whatsapp, { couponId, discountFils, finalAmountFils })
   }
 
   if (input.method === 'ziina') {
     if (!settings.ziina.enabled) {
       throw new PaymentError('Ziina payments are disabled', 'method_disabled')
     }
-    return await createZiinaPayment(input, pricing, settings.ziina.testMode)
+    return await createZiinaPayment(input, pricing, settings.ziina.testMode, { couponId, discountFils, finalAmountFils })
   }
 
   throw new PaymentError('Unsupported method', 'unsupported_method')
@@ -84,20 +107,24 @@ export async function createPayment(input: CreatePaymentInput): Promise<CreatePa
 
 // ─── WhatsApp rail ──────────────────────────────────────────────────────────
 
+type CouponContext = { couponId?: string; discountFils: number; finalAmountFils: number }
+
 async function createWhatsAppPayment(
   input: CreatePaymentInput,
   pricing: Pricing,
-  cfg: { enabled: boolean; adminNumber: string | null; requestTemplateCode: string }
+  cfg: { enabled: boolean; adminNumber: string | null; requestTemplateCode: string },
+  coupon: CouponContext
 ): Promise<CreatePaymentResult> {
-  // Create the row first so we have a paymentId to interpolate.
   const payment = await prisma.payment.create({
     data: {
       userId: input.userId,
       pricingId: pricing.id,
       method: 'whatsapp',
       status: 'pending_whatsapp',
-      amountFils: pricing.amountFils,
+      amountFils: coupon.finalAmountFils,
+      discountFils: coupon.discountFils,
       currency: pricing.currency,
+      couponId: coupon.couponId ?? null,
       metadata: input.metadata as any,
     },
   })
@@ -112,7 +139,7 @@ async function createWhatsAppPayment(
   const merged = renderTemplate(tplBody, {
     userName: input.userName,
     planName: pricing.name,
-    amountAED: filsToAED(pricing.amountFils),
+    amountAED: filsToAED(coupon.finalAmountFils),
     paymentId: payment.id,
   })
 
@@ -126,6 +153,7 @@ async function createWhatsAppPayment(
     },
   })
 
+  await recordCouponUsage(coupon.couponId, input.userId, updated.id)
   return { payment: updated, redirectUrl: whatsappUrl }
 }
 
@@ -134,23 +162,25 @@ async function createWhatsAppPayment(
 async function createZiinaPayment(
   input: CreatePaymentInput,
   pricing: Pricing,
-  testMode: boolean
+  testMode: boolean,
+  coupon: CouponContext
 ): Promise<CreatePaymentResult> {
-  // Mint the row first so we can use payment.id in metadata.
   const payment = await prisma.payment.create({
     data: {
       userId: input.userId,
       pricingId: pricing.id,
       method: 'ziina',
       status: 'pending_ziina',
-      amountFils: pricing.amountFils,
+      amountFils: coupon.finalAmountFils,
+      discountFils: coupon.discountFils,
       currency: pricing.currency,
+      couponId: coupon.couponId ?? null,
       metadata: input.metadata as any,
     },
   })
 
   const intent = await createZiinaIntent({
-    amountFils: pricing.amountFils,
+    amountFils: coupon.finalAmountFils,
     currency: pricing.currency,
     description: `CareerPilot — ${pricing.name}`,
     successUrl: `${input.successBaseUrl}?paymentId=${payment.id}&intentId={PAYMENT_INTENT_ID}`,
@@ -172,7 +202,18 @@ async function createZiinaPayment(
     },
   })
 
+  await recordCouponUsage(coupon.couponId, input.userId, updated.id)
   return { payment: updated, redirectUrl: intent.redirectUrl }
+}
+
+// ─── Coupon usage recording ─────────────────────────────────────────────────
+
+async function recordCouponUsage(couponId: string | undefined, userId: string, paymentId: string) {
+  if (!couponId) return
+  await prisma.$transaction([
+    prisma.couponUsage.create({ data: { couponId, userId, paymentId } }),
+    prisma.coupon.update({ where: { id: couponId }, data: { usedCount: { increment: 1 } } }),
+  ])
 }
 
 // ─── State transitions (called by admin route + webhook) ───────────────────
@@ -242,6 +283,7 @@ export class PaymentError extends Error {
       | 'method_disabled'
       | 'method_misconfigured'
       | 'unsupported_method'
+      | 'invalid_coupon'
   ) {
     super(message)
     this.name = 'PaymentError'

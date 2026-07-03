@@ -2,12 +2,13 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Navbar } from '@/components/shared/Navbar'
-import { CheckCircle2, XCircle, CreditCard } from 'lucide-react'
+import { CheckCircle2, XCircle, CreditCard, Tag, X, Loader2 } from 'lucide-react'
 
 interface Subscription {
   id: string
@@ -16,108 +17,164 @@ interface Subscription {
   endDate: string | null
 }
 
-interface Pricing {
-  resumePrice: number
-  coverLetterPrice: number
-  subscriptionPrice: number
-  subscriptionEnabled: boolean
+interface PricingPlan {
+  id: string
+  code: string
+  name: string
+  amountFils: number
+  currency: string
+  isActive: boolean
 }
+
+interface CouponResult {
+  valid: boolean
+  error?: string
+  coupon?: {
+    code: string
+    discountFils: number
+    finalAmountFils: number
+    description?: string
+  }
+}
+
+function filsToAED(fils: number) {
+  return (fils / 100).toFixed(2)
+}
+
+// Which plan code to use for the main subscription CTA
+const PRIMARY_PLAN = 'pro'
+
+const PLANS: { code: string; label: string; highlight?: boolean }[] = [
+  { code: 'starter', label: 'Starter Bundle' },
+  { code: 'pro', label: 'Pro Bundle', highlight: true },
+  { code: 'pro_annual', label: 'Pro Annual' },
+  { code: 'automation', label: 'Automation' },
+  { code: 'growth', label: 'Growth Bundle' },
+]
 
 export default function SubscriptionPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+
   const [subscription, setSubscription] = useState<Subscription | null>(null)
-  const [pricing, setPricing] = useState<Pricing | null>(null)
+  const [plans, setPlans] = useState<PricingPlan[]>([])
+  const [selectedPlan, setSelectedPlan] = useState<string>(PRIMARY_PLAN)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState('')
+  const [couponState, setCouponState] = useState<'idle' | 'checking' | 'applied' | 'error'>('idle')
+  const [couponResult, setCouponResult] = useState<CouponResult | null>(null)
+  const couponDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login')
-      return
-    }
-    if (status === 'authenticated') {
-      fetchData()
-      
-      // Check for success/error messages in URL
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('success') === 'true') {
-        alert('Subscription activated successfully!')
-        // Clean URL
-        window.history.replaceState({}, '', window.location.pathname)
-      }
-      if (params.get('error')) {
-        alert(`Error: ${params.get('error')}`)
-        window.history.replaceState({}, '', window.location.pathname)
-      }
-      if (params.get('cancelled') === 'true') {
-        alert('Payment was cancelled')
-        window.history.replaceState({}, '', window.location.pathname)
-      }
-    }
+    if (status === 'unauthenticated') { router.push('/auth/login'); return }
+    if (status === 'authenticated') fetchData()
   }, [status, router])
+
+  // Handle success/cancel query params without alert()
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('success') || params.get('error') || params.get('cancelled')) {
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   const fetchData = async () => {
     try {
-      const [subResponse, pricingResponse] = await Promise.all([
+      const [subRes, plansRes] = await Promise.all([
         fetch('/api/subscription'),
-        fetch('/api/subscription/pricing'),
+        fetch('/api/pricing'),
       ])
-
-      if (subResponse.ok) {
-        const subData = await subResponse.json()
-        setSubscription(subData.subscription)
+      if (subRes.ok) {
+        const d = await subRes.json()
+        setSubscription(d.subscription)
       }
-
-      if (pricingResponse.ok) {
-        const pricingData = await pricingResponse.json()
-        setPricing(pricingData)
+      if (plansRes.ok) {
+        const d = await plansRes.json()
+        // Accept array or { plans: [] } shape
+        const arr: PricingPlan[] = Array.isArray(d) ? d : (d.plans ?? [])
+        setPlans(arr.filter((p) => p.isActive))
       }
-    } catch (error) {
-      console.error('Failed to fetch subscription data:', error)
+    } catch (e) {
+      console.error('Failed to fetch subscription data:', e)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSubscribe = async () => {
-    // Phase 5: migrated from legacy /api/payments/create to the new
-    // /api/payments/intent dual-rail endpoint. We resolve enabled methods
-    // first so the user is sent through whichever rail admin has on.
+  const currentPlan = plans.find((p) => p.code === selectedPlan)
+
+  // Validate coupon whenever input changes (debounced)
+  const handleCouponInput = (val: string) => {
+    setCouponInput(val)
+    setCouponResult(null)
+    setCouponState('idle')
+    if (couponDebounce.current) clearTimeout(couponDebounce.current)
+    if (!val.trim()) return
+    couponDebounce.current = setTimeout(() => applyCoupon(val.trim()), 600)
+  }
+
+  const applyCoupon = async (code: string) => {
+    if (!currentPlan) return
+    setCouponState('checking')
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.toUpperCase(), pricingCode: selectedPlan }),
+      })
+      const data: CouponResult = await res.json()
+      setCouponResult(data)
+      setCouponState(data.valid ? 'applied' : 'error')
+    } catch {
+      setCouponState('error')
+      setCouponResult({ valid: false, error: 'Could not check coupon. Please try again.' })
+    }
+  }
+
+  const clearCoupon = () => {
+    setCouponInput('')
+    setCouponResult(null)
+    setCouponState('idle')
+  }
+
+  const effectiveAmount = couponResult?.valid && couponResult.coupon
+    ? couponResult.coupon.finalAmountFils
+    : currentPlan?.amountFils ?? 0
+
+  const handleCheckout = async () => {
     setProcessing(true)
     try {
       const methodsRes = await fetch('/api/payments/methods', { cache: 'no-store' })
-      const methodsJson = (await methodsRes.json()) as { methods?: Array<'whatsapp' | 'ziina'> }
+      const methodsJson = await methodsRes.json() as { methods?: Array<'whatsapp' | 'ziina'> }
       const enabled = methodsJson.methods ?? []
       if (enabled.length === 0) {
         alert('Payments are temporarily unavailable. Please try again later.')
         return
       }
-      // Prefer Ziina for direct online checkout; fall back to WhatsApp.
       const method: 'whatsapp' | 'ziina' = enabled.includes('ziina') ? 'ziina' : 'whatsapp'
 
-      const response = await fetch('/api/payments/intent', {
+      const res = await fetch('/api/payments/intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pricingCode: 'monthly',
+          pricingCode: selectedPlan,
           method,
+          ...(couponResult?.valid && couponInput ? { couponCode: couponInput.toUpperCase() } : {}),
         }),
       })
 
-      if (response.ok) {
-        const data = (await response.json()) as { redirectUrl?: string }
-        if (data.redirectUrl) {
-          window.location.href = data.redirectUrl
-        } else {
-          alert('Redirect URL not received')
-        }
+      if (res.ok) {
+        const data = await res.json() as { redirectUrl?: string }
+        if (data.redirectUrl) window.location.href = data.redirectUrl
       } else {
-        const error = await response.json().catch(() => ({}))
-        alert(error.error || 'Failed to create payment')
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || 'Failed to create payment')
       }
-    } catch (error) {
-      console.error('Payment creation error:', error)
+    } catch {
       alert('Something went wrong. Please try again.')
     } finally {
       setProcessing(false)
@@ -131,150 +188,197 @@ export default function SubscriptionPage() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-4 w-64 mb-8" />
-          <div className="grid sm:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-xl" />)}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl" />)}
           </div>
         </div>
       </div>
     )
   }
 
-  const isActive = subscription?.status === 'active' && (
-    !subscription.endDate || new Date(subscription.endDate) > new Date()
-  )
+  const isActive = subscription?.status === 'active' &&
+    (!subscription.endDate || new Date(subscription.endDate) > new Date())
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Premium Subscription</h1>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 max-w-4xl">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-1">Upgrade Your Plan</h1>
+        <p className="text-muted-foreground mb-8 text-sm sm:text-base">
+          Pick the plan that fits you. All prices in AED.
+        </p>
 
-        <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
-          {/* Current Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isActive ? (
-                <div className="flex items-start sm:items-center gap-3 text-green-600">
-                  <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 mt-0.5 sm:mt-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm sm:text-base">Active Subscription</p>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                      Started: {new Date(subscription!.startDate).toLocaleDateString()}
-                      {subscription!.endDate && (
-                        <> • Expires: {new Date(subscription!.endDate).toLocaleDateString()}</>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-start sm:items-center gap-3 text-gray-600">
-                  <XCircle className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 mt-0.5 sm:mt-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm sm:text-base">No Active Subscription</p>
-                    <p className="text-xs sm:text-sm mt-1">Subscribe to unlock all features</p>
-                  </div>
-                </div>
-              )}
+        {/* Current subscription banner */}
+        {isActive && (
+          <Card className="mb-6 border-green-200 bg-green-50">
+            <CardContent className="py-4 flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-green-800 text-sm">You have an active subscription</p>
+                <p className="text-xs text-green-700 mt-0.5">
+                  Started {new Date(subscription!.startDate).toLocaleDateString()}
+                  {subscription!.endDate && ` · Expires ${new Date(subscription!.endDate).toLocaleDateString()}`}
+                </p>
+              </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Pricing Info */}
-          {pricing && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Pricing</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {pricing.subscriptionEnabled ? (
+        {/* Plan selector */}
+        {plans.length > 0 ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            {PLANS.map(({ code, label, highlight }) => {
+              const plan = plans.find((p) => p.code === code)
+              if (!plan) return null
+              const selected = selectedPlan === code
+              return (
+                <button
+                  key={code}
+                  onClick={() => { setSelectedPlan(code); clearCoupon() }}
+                  className={`text-left rounded-xl border-2 p-4 transition-all ${
+                    selected
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="font-semibold text-sm">{plan.name}</span>
+                    {highlight && (
+                      <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+                        Popular
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xl font-bold">
+                    {filsToAED(plan.amountFils)} <span className="text-sm font-normal text-muted-foreground">AED</span>
+                  </p>
+                  {selected && <div className="mt-2 w-4 h-1 rounded bg-primary" />}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <Card className="mb-8">
+            <CardContent className="py-6 text-center text-muted-foreground text-sm">
+              No plans available right now. Please check back soon.
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Checkout card */}
+        {currentPlan && !isActive && (
+          <Card className="max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle className="text-base">Checkout — {currentPlan.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Price display */}
+              <div className="flex items-baseline gap-3">
+                {couponResult?.valid && couponResult.coupon ? (
                   <>
-                    <div className="flex justify-between items-center text-sm sm:text-base">
-                      <span>Resume Download</span>
-                      <span className="font-semibold">{pricing.resumePrice} AED</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm sm:text-base">
-                      <span>Cover Letter Download</span>
-                      <span className="font-semibold">{pricing.coverLetterPrice} AED</span>
-                    </div>
-                    <div className="pt-4 border-t">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
-                        <span className="text-base sm:text-lg font-semibold">Premium Subscription</span>
-                        <span className="text-xl sm:text-2xl font-bold text-primary">
-                          {pricing.subscriptionPrice || 100} AED
-                        </span>
-                      </div>
-                      <ul className="space-y-2 text-xs sm:text-sm text-gray-600 mb-4">
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                          <span>Unlimited ATS-optimized resume downloads</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                          <span>Unlimited cover letter downloads</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                          <span>Full access to all AI-powered features</span>
-                        </li>
-                      </ul>
-                      {!isActive && (
-                        <>
-                          <Button onClick={handleSubscribe} disabled={processing} className="w-full min-h-[48px] text-base sm:text-lg">
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            {processing ? 'Processing...' : 'Unlock Full Access'}
-                          </Button>
-                          <div className="flex flex-wrap items-center justify-center gap-3 mt-3 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">🔒 Secure checkout</span>
-                            <span className="flex items-center gap-1">↩️ Cancel anytime</span>
-                            <span className="flex items-center gap-1">🛡️ Data encrypted</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    <span className="text-2xl font-bold text-primary">
+                      {filsToAED(couponResult.coupon.finalAmountFils)} AED
+                    </span>
+                    <span className="text-base line-through text-muted-foreground">
+                      {filsToAED(currentPlan.amountFils)} AED
+                    </span>
+                    <span className="text-sm text-emerald-600 font-medium">
+                      −{filsToAED(couponResult.coupon.discountFils)} AED saved
+                    </span>
                   </>
                 ) : (
-                  <p className="text-gray-600">Subscriptions are currently disabled by admin.</p>
+                  <span className="text-2xl font-bold">
+                    {filsToAED(currentPlan.amountFils)} AED
+                  </span>
                 )}
-              </CardContent>
-            </Card>
-          )}
+              </div>
 
-          {/* Benefits */}
-          <Card>
-            <CardHeader>
-              <CardTitle>What You Get</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 sm:space-y-4">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm sm:text-base">Unlimited Downloads</p>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Download as many ATS-optimized resumes and cover letters as you need</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm sm:text-base">AI-Powered Features</p>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Full access to resume optimization and interview prep for UAE jobs</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm sm:text-base">Priority Support</p>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Get help when you need it</p>
-                  </div>
-                </li>
-              </ul>
+              {/* Coupon input */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  <Tag className="h-3.5 w-3.5" /> Coupon code
+                </label>
+                <div className="relative flex gap-2">
+                  <Input
+                    value={couponInput}
+                    onChange={(e) => handleCouponInput(e.target.value)}
+                    placeholder="e.g. WELCOME50"
+                    className="font-mono uppercase pr-8"
+                    disabled={couponState === 'checking'}
+                  />
+                  {couponInput && couponState !== 'checking' && (
+                    <button
+                      onClick={clearCoupon}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                  {couponState === 'checking' && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                {couponState === 'applied' && couponResult?.valid && (
+                  <p className="text-xs text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {couponResult.coupon?.description ?? 'Discount applied!'}
+                  </p>
+                )}
+                {couponState === 'error' && (
+                  <p className="text-xs text-red-600 flex items-center gap-1">
+                    <XCircle className="h-3.5 w-3.5" />
+                    {couponResult?.error ?? 'Invalid coupon code'}
+                  </p>
+                )}
+              </div>
+
+              {/* CTA */}
+              <Button
+                onClick={handleCheckout}
+                disabled={processing || couponState === 'checking'}
+                className="w-full min-h-[48px] text-base"
+              >
+                {processing ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing…</>
+                ) : (
+                  <><CreditCard className="h-4 w-4 mr-2" /> Pay {filsToAED(effectiveAmount)} AED</>
+                )}
+              </Button>
+
+              <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
+                <span>🔒 Secure checkout</span>
+                <span>↩️ Cancel anytime</span>
+                <span>🛡️ Data encrypted</span>
+              </div>
             </CardContent>
           </Card>
-        </div>
+        )}
+
+        {/* Benefits */}
+        <Card className="mt-8 max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle className="text-base">What you get</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3 text-sm">
+              {[
+                ['Unlimited ATS-optimized resume downloads', '✅'],
+                ['Unlimited cover letter downloads', '✅'],
+                ['Full AI-powered career features', '✅'],
+                ['Interview prep for UAE jobs', '✅'],
+                ['Priority support', '✅'],
+              ].map(([item, icon]) => (
+                <li key={item} className="flex items-start gap-2">
+                  <span>{icon}</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
 }
-
