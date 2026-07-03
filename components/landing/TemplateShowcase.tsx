@@ -7,10 +7,12 @@ import { ResumePreview } from '@/components/resume/ResumePreview'
 import { SAMPLE_RESUME_DATA } from '@/lib/resume/sampleData'
 
 const SHOWCASE_TEMPLATES = [
-  { key: 'dubai-classic',       name: 'Dubai Classic',       category: 'Classic',   isPremium: false },
-  { key: 'sharjah-minimal',     name: 'Sharjah Minimal',     category: 'Minimal',   isPremium: false },
-  { key: 'abu-dhabi-executive', name: 'Abu Dhabi Executive', category: 'Executive', isPremium: true  },
-  { key: 'gulf-modern',         name: 'Gulf Modern',         category: 'Modern',    isPremium: false },
+  { key: 'dubai-classic',    name: 'Dubai Classic',    category: 'Classic',     isPremium: false },
+  { key: 'uae-tech',         name: 'UAE Tech',         category: 'Modern',      isPremium: false },
+  { key: 'uae-banking',      name: 'UAE Banking',      category: 'Finance',     isPremium: false },
+  { key: 'uae-creative',     name: 'UAE Creative',     category: 'Creative',    isPremium: false },
+  { key: 'uae-gold',         name: 'UAE Gold',         category: 'Premium',     isPremium: true  },
+  { key: 'ats-pure',         name: 'ATS Pure',         category: 'ATS-Safe',    isPremium: false },
 ]
 
 export function TemplateShowcase() {
@@ -26,7 +28,7 @@ export function TemplateShowcase() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 max-w-5xl mx-auto mb-8">
           {SHOWCASE_TEMPLATES.map((t) => (
             <Link href="/auth/register" key={t.key} className="group block">
               <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-white shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-0.5">
