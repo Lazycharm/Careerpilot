@@ -72,6 +72,9 @@ export async function POST(req: Request) {
         case 'failed':
           await markZiinaFailed(intentId, 'Ziina reported failed')
           break
+        case 'canceled':
+          await markZiinaFailed(intentId, 'Ziina reported canceled by user')
+          break
         // pending / requires_payment_instrument / requires_user_action — no-op.
       }
     }

@@ -7,7 +7,14 @@
  *
  * Key facts the docs lock down (worth reading in code, not just the doc):
  *   - Amount is in fils. 5 AED = 500. Minimum payment is 200 (2 AED).
- *   - operation_id should be unique per request (idempotency).
+ *   - `operation_id` is server-assigned by Ziina and only appears in the
+ *     response — it is NOT a request field (confirmed against Ziina's
+ *     OpenAPI spec 2026-07-30; an earlier version of this file sent one in
+ *     the request body under the mistaken belief it provided idempotency).
+ *     Real correlation happens via the returned intent `id`
+ *     (`Payment.ziinaIntentId`), which the webhook handler looks up by.
+ *   - `metadata` is likewise not part of the documented request schema —
+ *     not sent, for the same reason.
  *   - success_url / cancel_url may include `{PAYMENT_INTENT_ID}` which Ziina
  *     replaces server-side with the intent id.
  *   - Webhook events: payment_intent.status.updated, refund.status.updated.
@@ -20,7 +27,6 @@
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { randomUUID } from 'node:crypto'
 import { env } from '@/lib/env'
 
 const ZIINA_BASE = 'https://api-v2.ziina.com'
@@ -39,6 +45,7 @@ export type ZiinaStatus =
   | 'requires_user_action'
   | 'completed'
   | 'failed'
+  | 'canceled'
 
 export interface CreateIntentInput {
   /** Amount in fils. Must be >= 200 (2 AED). */
@@ -77,6 +84,9 @@ export async function createZiinaIntent(input: CreateIntentInput): Promise<Creat
     throw new Error(`Ziina minimum amount is 200 fils (2 AED); got ${input.amountFils}`)
   }
 
+  // Only fields Ziina's documented request schema actually accepts —
+  // operation_id and metadata are response-only / undocumented, see the
+  // module-level comment above.
   const body = {
     amount: input.amountFils,
     currency_code: input.currency ?? 'AED',
@@ -85,8 +95,6 @@ export async function createZiinaIntent(input: CreateIntentInput): Promise<Creat
     cancel_url: input.cancelUrl,
     failure_url: input.failureUrl,
     test: input.test ?? env.ZIINA_TEST_MODE,
-    operation_id: randomUUID(),
-    metadata: input.metadata,
   }
 
   const resp = await fetch(`${ZIINA_BASE}/api/payment_intent`, {
