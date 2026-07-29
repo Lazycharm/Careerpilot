@@ -1,9 +1,9 @@
 /**
  * POST /api/admin/payments/[id]/approve
  *
- * Approves a pending payment. Activates a legacy Subscription so existing
- * gating works during Phase 4; the Pricing-driven subscription model lands
- * with the editor rewrite.
+ * Approves a pending WhatsApp-rail payment. Subscription activation (setting
+ * pricingId, currentPeriodStart/End) happens inside `approvePayment()` in
+ * `lib/payments/router.ts` — shared with the Ziina webhook rail.
  *
  * Body (optional): { note?: string }
  */
@@ -37,7 +37,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const before = await prisma.payment.findUnique({
     where: { id: params.id },
-    include: { pricing: true },
   })
   if (!before) {
     return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
@@ -51,13 +50,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     approverId: session.user.id,
     note: body.note,
   })
-
-  // Bridge to legacy Subscription so the rest of the app stays gated correctly.
-  await provisionLegacySubscription({
-    userId: before.userId,
-    paymentId: before.id,
-    durationDays: before.pricing.durationDays,
-  })
+  // Subscription activation now happens inside approvePayment() itself
+  // (lib/payments/router.ts) — shared with the Ziina webhook rail so both
+  // paths can't drift again.
 
   await audit({
     actorId: session.user.id,
@@ -115,52 +110,4 @@ async function notifyApproval(opts: { paymentId: string; userId: string }) {
     periodEndIso: sub?.currentPeriodEnd?.toISOString() ?? null,
   })
   await sendEmail({ to: payment.user.email, ...email })
-}
-
-async function provisionLegacySubscription(opts: {
-  userId: string
-  paymentId: string
-  durationDays: number | null
-}) {
-  const now = new Date()
-  // Bundles without a duration get a default 30-day window so the user has
-  // entitlement to download / use AI; Phase 4 will replace this default with
-  // per-bundle credit accounting.
-  const days = opts.durationDays ?? 30
-  const periodEnd = new Date(now.getTime() + days * 24 * 60 * 60 * 1000)
-
-  const existing = await prisma.subscription.findFirst({
-    where: { userId: opts.userId, status: 'active' },
-    orderBy: { currentPeriodEnd: 'desc' },
-  })
-
-  if (existing) {
-    // Extend: take the later of "existing end" and "now+days", to be generous.
-    const newEnd =
-      existing.currentPeriodEnd && existing.currentPeriodEnd > now
-        ? new Date(existing.currentPeriodEnd.getTime() + days * 24 * 60 * 60 * 1000)
-        : periodEnd
-    await prisma.subscription.update({
-      where: { id: existing.id },
-      data: {
-        status: 'active',
-        currentPeriodStart: existing.currentPeriodStart ?? now,
-        currentPeriodEnd: newEnd,
-        endDate: newEnd,
-      },
-    })
-    return
-  }
-
-  await prisma.subscription.create({
-    data: {
-      userId: opts.userId,
-      status: 'active',
-      planType: 'pro',
-      currentPeriodStart: now,
-      currentPeriodEnd: periodEnd,
-      startDate: now,
-      endDate: periodEnd,
-    },
-  })
 }

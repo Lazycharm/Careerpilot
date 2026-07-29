@@ -1,7 +1,15 @@
 /**
- * POST /api/cron/run-automations
+ * GET/POST /api/cron/run-automations
  *
- * Triggered every minute by Vercel cron (see vercel.json). Picks up to
+ * Triggered daily by Vercel cron (see vercel.json's schedule — this doc
+ * comment previously said "every minute", which was never true). Vercel
+ * Cron invokes via GET; this route was POST-only until 2026-07-30, which
+ * meant Vercel's actual request always hit Next.js's automatic 405 before
+ * authorizeCronRequest() ever ran — the automation dispatch loop below had
+ * never fired in production. Exporting both GET and POST fixes Vercel's
+ * caller while keeping POST for manual/other cron runners.
+ *
+ * Picks up to
  * BATCH_LIMIT automations whose `nextRunAt` has passed, runs one dispatch
  * per (automation, company) — generating a tailored CV + cover letter +
  * application email per company — and sends via the user's connected Gmail.
@@ -42,7 +50,15 @@ export const maxDuration = 60 // serverless function ceiling
 
 const BATCH_LIMIT = 5 // automations per tick — keep tick under 60s
 
+export async function GET(req: Request) {
+  return handleCronRequest(req)
+}
+
 export async function POST(req: Request) {
+  return handleCronRequest(req)
+}
+
+async function handleCronRequest(req: Request) {
   if (!authorizeCronRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

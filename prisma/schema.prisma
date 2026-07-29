@@ -381,12 +381,15 @@ model Payment {
   approvedAt          DateTime?
   rejectedReason      String?
   rejectedAt          DateTime?
+  couponId            String?       // applied coupon
+  discountFils        Int           @default(0) // amount discounted in fils
   metadata            Json?         // arbitrary context (resumeId, etc.)
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
   user                User          @relation("PaymentUser", fields: [userId], references: [id], onDelete: Cascade)
   pricing             Pricing       @relation(fields: [pricingId], references: [id])
+  coupon              Coupon?       @relation(fields: [couponId], references: [id])
 
   @@index([userId, status])
   @@index([status, createdAt])
@@ -709,6 +712,41 @@ model AutomationApplication {
 
   @@index([automationId, status])
   @@index([companyId])
+}
+
+// ── Coupons ─────────────────────────────────────────────────────────────────
+model Coupon {
+  id            String    @id @default(uuid())
+  code          String    @unique
+  description   String?
+  discountType  String    // 'percent' | 'fixed'
+  discountValue Float     // percent: 0-100; fixed: fils (e.g. 500 = 5.00 AED off)
+  maxUses       Int?      // null = unlimited
+  usedCount     Int       @default(0)
+  expiresAt     DateTime?
+  isActive      Boolean   @default(true)
+  applicableTo  String[]  // ['all'] or specific pricing codes
+  minAmountFils Int?      // minimum order total in fils before discount applies
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  usages   CouponUsage[]
+  payments Payment[]
+
+  @@index([code, isActive])
+}
+
+model CouponUsage {
+  id        String   @id @default(uuid())
+  couponId  String
+  userId    String
+  paymentId String?
+  usedAt    DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+
+  @@index([couponId])
+  @@index([userId])
 }
 
 // ── Phase 7: SEO content surfaces ───────────────────────────────────────────

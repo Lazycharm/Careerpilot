@@ -13,9 +13,9 @@
  *   3. Idempotency — `markZiinaCompleted` is a no-op if the Payment is
  *      already in `approved` state. Ziina retries up to 3 times on non-2xx.
  *
- * The route only updates the Payment row. Subscription activation is the
- * caller's concern (Phase 4 will pair this with subscription provisioning
- * once the Pricing-driven sub flow lands).
+ * Subscription activation happens inside `markZiinaCompleted()` itself
+ * (`lib/payments/router.ts`) — shared with the WhatsApp admin-approve rail
+ * so both paths can't drift again.
  *
  * Legacy behavior preserved: a no-op happens cleanly if the webhook fires
  * for an intent we don't know about — useful during migration.
@@ -28,7 +28,6 @@ import {
   type ZiinaWebhookEvent,
 } from '@/lib/payments/ziina'
 import { markZiinaCompleted, markZiinaFailed } from '@/lib/payments/router'
-import { prisma } from '@/lib/prisma'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -66,12 +65,8 @@ export async function POST(req: Request) {
       const intentId = event.data.id
       switch (event.data.status) {
         case 'completed': {
-          const updated = await markZiinaCompleted(intentId)
-          // Activate / extend subscription mirroring the legacy 1-year window,
-          // until Phase 4 rebuilds subscription provisioning around Pricing.
-          if (updated && updated.userId) {
-            await provisionLegacySubscription(updated.userId, updated.id, intentId)
-          }
+          // markZiinaCompleted() activates/extends the subscription itself.
+          await markZiinaCompleted(intentId)
           break
         }
         case 'failed':
@@ -86,41 +81,6 @@ export async function POST(req: Request) {
     // 5xx prompts Ziina to retry; this is safe because handlers are idempotent.
     return NextResponse.json({ error: 'handler_error' }, { status: 500 })
   }
-}
-
-/**
- * Bridge to the legacy `Subscription` model so paid users can keep using the
- * app while Phase 4 rebuilds the Pricing-driven subscription flow.
- */
-async function provisionLegacySubscription(
-  userId: string,
-  _paymentId: string,
-  intentId: string
-) {
-  const existing = await prisma.subscription.findFirst({
-    where: { ziinaOrderId: intentId },
-  })
-  if (existing) {
-    await prisma.subscription.update({
-      where: { id: existing.id },
-      data: {
-        status: 'active',
-        startDate: existing.startDate ?? new Date(),
-        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-      },
-    })
-    return
-  }
-  await prisma.subscription.create({
-    data: {
-      userId,
-      status: 'active',
-      planType: 'pro', // closest existing enum to "paid"
-      ziinaOrderId: intentId,
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-    },
-  })
 }
 
 function pickClientIp(req: Request): string | null {

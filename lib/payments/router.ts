@@ -223,7 +223,10 @@ export async function approvePayment(opts: {
   approverId: string
   note?: string
 }): Promise<Payment> {
-  return prisma.payment.update({
+  const existing = await prisma.payment.findUnique({ where: { id: opts.paymentId } })
+  if (existing?.status === 'approved') return existing
+
+  const updated = await prisma.payment.update({
     where: { id: opts.paymentId },
     data: {
       status: 'approved',
@@ -232,6 +235,8 @@ export async function approvePayment(opts: {
       adminNote: opts.note,
     },
   })
+  await activateSubscriptionForPayment(updated.id)
+  return updated
 }
 
 export async function rejectPayment(opts: {
@@ -253,11 +258,83 @@ export async function markZiinaCompleted(intentId: string): Promise<Payment | nu
   const payment = await prisma.payment.findUnique({ where: { ziinaIntentId: intentId } })
   if (!payment) return null
   if (payment.status === 'approved') return payment
-  return prisma.payment.update({
+  const updated = await prisma.payment.update({
     where: { id: payment.id },
     data: {
       status: 'approved',
       approvedAt: new Date(),
+    },
+  })
+  await activateSubscriptionForPayment(updated.id)
+  return updated
+}
+
+// ─── Subscription activation (shared by both payment rails) ────────────────
+
+/**
+ * Activate/extend the user's Subscription after a payment is approved. This
+ * is the single place both rails (WhatsApp admin-approve and the Ziina
+ * webhook) provision access — they used to each have their own copy, which
+ * had drifted: the Ziina copy hardcoded a 365-day window regardless of the
+ * plan purchased, never set `currentPeriodStart`/`currentPeriodEnd` (only
+ * `startDate`/`endDate`), and neither copy set `pricingId` — which meant
+ * `getEntitlements()` fell back to a coarse legacy `planType` mapping that
+ * granted identical entitlements to every paid plan. Setting `pricingId`
+ * here fixes that for free (see `lib/entitlements.ts`'s `projectPricing`
+ * branch); keeping `currentPeriodEnd` and `endDate` in sync fixes the
+ * disagreement between `/api/subscription` (checks `endDate`) and
+ * entitlements/the expiry cron (both check `currentPeriodEnd`).
+ */
+async function activateSubscriptionForPayment(paymentId: string): Promise<void> {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: { pricing: true },
+  })
+  if (!payment) return
+
+  const now = new Date()
+  // One-shot bundles with no duration get a default 30-day access window.
+  const days = payment.pricing.durationDays ?? 30
+
+  const existing = await prisma.subscription.findFirst({
+    where: { userId: payment.userId, status: 'active' },
+    orderBy: { currentPeriodEnd: 'desc' },
+  })
+
+  if (existing) {
+    // Extend from the later of "existing end" and "now" (generous stacking
+    // on renewal), and always move to the plan just purchased — covers
+    // upgrades/downgrades, which the old per-rail copies didn't handle.
+    const base =
+      existing.currentPeriodEnd && existing.currentPeriodEnd > now ? existing.currentPeriodEnd : now
+    const newEnd = new Date(base.getTime() + days * 24 * 60 * 60 * 1000)
+    await prisma.subscription.update({
+      where: { id: existing.id },
+      data: {
+        status: 'active',
+        pricingId: payment.pricingId,
+        planType: 'pro',
+        currentPeriodStart: existing.currentPeriodStart ?? now,
+        currentPeriodEnd: newEnd,
+        endDate: newEnd,
+        ziinaOrderId: payment.ziinaIntentId ?? existing.ziinaOrderId,
+      },
+    })
+    return
+  }
+
+  const periodEnd = new Date(now.getTime() + days * 24 * 60 * 60 * 1000)
+  await prisma.subscription.create({
+    data: {
+      userId: payment.userId,
+      status: 'active',
+      planType: 'pro',
+      pricingId: payment.pricingId,
+      currentPeriodStart: now,
+      currentPeriodEnd: periodEnd,
+      startDate: now,
+      endDate: periodEnd,
+      ziinaOrderId: payment.ziinaIntentId ?? null,
     },
   })
 }

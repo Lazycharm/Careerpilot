@@ -1,9 +1,17 @@
 /**
- * POST /api/cron/expire-subscriptions
+ * GET/POST /api/cron/expire-subscriptions
  *
- * Hourly sweep — flips `Subscription.status` from `active` to `expired` for
- * any row whose `currentPeriodEnd` is in the past. Cheap to run; bounded
- * because we only touch rows that actually need flipping.
+ * Daily sweep (see vercel.json's schedule — this doc comment previously
+ * said "Hourly", which was never true) — flips `Subscription.status` from
+ * `active` to `expired` for any row whose `currentPeriodEnd` is in the
+ * past. Cheap to run; bounded because we only touch rows that actually
+ * need flipping.
+ *
+ * Vercel Cron invokes via GET; this route was POST-only until 2026-07-30,
+ * which meant Vercel's actual request always hit Next.js's automatic 405
+ * before authorizeCronRequest() ever ran — this sweep had never fired in
+ * production. Exporting both GET and POST fixes Vercel's caller while
+ * keeping POST for manual/other cron runners.
  *
  * Sends a notification + email per expiry so the user knows.
  */
@@ -16,7 +24,15 @@ import { sendEmail } from '@/lib/email/resend'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+export async function GET(req: Request) {
+  return handleCronRequest(req)
+}
+
 export async function POST(req: Request) {
+  return handleCronRequest(req)
+}
+
+async function handleCronRequest(req: Request) {
   if (!authorizeCronRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
