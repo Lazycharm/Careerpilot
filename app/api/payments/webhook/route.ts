@@ -19,6 +19,19 @@
  *
  * Legacy behavior preserved: a no-op happens cleanly if the webhook fires
  * for an intent we don't know about — useful during migration.
+ *
+ * Shared-webhook fan-out (2026-08-02): Ziina only allows ONE registered
+ * webhook URL per merchant account, and every AyoubOS product that takes
+ * Ziina payments (CareerPilot, Invoice, CashLink, SoftPoint) uses this same
+ * account/API key — registering a second webhook would silently overwrite
+ * this one. Ayoub's real decision: keep this URL as the single registered
+ * endpoint, and have it forward the untouched raw body + the already-
+ * verified signature on to each other product's own existing ziina-webhook
+ * function, which independently re-verifies the signature (same shared
+ * secret) and looks up the intent id in its own database, no-op'ing
+ * cleanly if it's not theirs. This route's own handling of the event
+ * (below) is unaffected — CareerPilot's own logic still runs exactly as
+ * before, fan-out is additive.
  */
 
 import { NextResponse } from 'next/server'
@@ -31,6 +44,40 @@ import { markZiinaCompleted, markZiinaFailed } from '@/lib/payments/router'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+// Other products sharing this Ziina account's single webhook. Each of
+// these already has its own real ziina-webhook Edge Function (built and
+// verified independently) - this only forwards the raw event to it.
+const FAN_OUT_URLS = [
+  'https://azddjridufxqbqvhvpxq.supabase.co/functions/v1/ziina-webhook', // Invoice
+  'https://qdwfaheqflmqdraknpif.supabase.co/functions/v1/ziina-webhook', // CashLink
+  'https://ggdrywyprcrhygxiaeny.supabase.co/functions/v1/ziina-webhook', // SoftPoint
+]
+
+function forwardToOtherProducts(rawBody: string, signature: string | null) {
+  if (!signature) return
+  // No IP-allowlist-bypass header here on purpose - that would just be a
+  // spoofable claim. The real authentication is the HMAC signature itself
+  // (only forwarded unchanged, never regenerated), which each downstream
+  // function independently re-verifies against the same shared secret.
+  // Their IP allowlist has been relaxed to not block this forward (see
+  // each product's ziina-webhook/index.ts) - signature verification is
+  // the actual security boundary now, the IP check was defense-in-depth
+  // that would otherwise reject a legitimate forward from Vercel's egress
+  // IP outright.
+  for (const url of FAN_OUT_URLS) {
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Hmac-Signature': signature,
+      },
+      body: rawBody,
+    }).catch((err) => {
+      console.error('[ziina.webhook] fan-out failed for', url, err);
+    });
+  }
+}
 
 export async function POST(req: Request) {
   // 1. IP allowlist
@@ -52,7 +99,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
-  // 3. Process
+  // 3. Fan out to the other products sharing this account's single webhook
+  // (see the file-level comment above) - fire-and-forget, doesn't block or
+  // affect this route's own handling below.
+  forwardToOtherProducts(rawBody, signature)
+
+  // 4. Process
   let event: ZiinaWebhookEvent
   try {
     event = JSON.parse(rawBody) as ZiinaWebhookEvent
