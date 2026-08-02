@@ -53,16 +53,17 @@ export default function LandingPage() {
               <Link href="#how-it-works" className="hover:text-primary transition-colors">How It Works</Link>
               <Link href="#pricing" className="hover:text-primary transition-colors">Pricing</Link>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-3">
               <Link href="/auth/login">
-                <Button variant="ghost" size="sm" className="text-sm min-h-[44px] px-3 sm:px-4">
+                <Button variant="ghost" size="sm" className="text-xs sm:text-sm min-h-[44px] px-2 sm:px-4">
                   Log in
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button size="sm" className="text-sm min-h-[44px] px-4 sm:px-5 gap-1.5 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 border-0">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Build My Resume
+                <Button size="sm" className="text-xs sm:text-sm min-h-[44px] px-2.5 sm:px-5 gap-1.5 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 border-0">
+                  <Sparkles className="h-3.5 w-3.5 hidden sm:inline" />
+                  <span className="sm:hidden">Resume</span>
+                  <span className="hidden sm:inline">Build My Resume</span>
                 </Button>
               </Link>
             </div>
