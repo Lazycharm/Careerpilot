@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Zap, MessageSquare, Target, BarChart3, CheckCircle2 } from 'lucide-react'
+import { Sparkles, Zap, MessageSquare, Target, Send, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollReveal } from './ScrollReveal'
 
@@ -67,6 +67,21 @@ const FEATURES = [
     ],
     demo: <InterviewDemo />,
   },
+  {
+    id: 'automation',
+    icon: Send,
+    label: 'Application Automation',
+    color: 'orange',
+    headline: 'Applications go out on their own — even while you sleep',
+    description:
+      'Connect your email account, pick the companies you want to reach, and Career Pilot sends a tailored application — built from your saved resume and cover letter — on a schedule you set. You stay in control of the daily cap and hours; it handles the sending.',
+    bullets: [
+      'Sends directly from your own connected email account',
+      'You set the target companies, daily cap, and sending hours',
+      'Every application uses your saved resume and cover letter',
+    ],
+    demo: <AutomationDemo />,
+  },
 ]
 
 const COLOR_MAP = {
@@ -74,6 +89,7 @@ const COLOR_MAP = {
   yellow: { bg: 'bg-yellow-50', text: 'text-yellow-600', border: 'border-yellow-200', active: 'bg-yellow-500 text-white', badge: 'bg-yellow-500' },
   purple: { bg: 'bg-violet-50', text: 'text-violet-600', border: 'border-violet-200', active: 'bg-violet-600 text-white', badge: 'bg-violet-600' },
   green:  { bg: 'bg-emerald-50',text: 'text-emerald-600',border: 'border-emerald-200',active: 'bg-emerald-600 text-white', badge: 'bg-emerald-600' },
+  orange: { bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200', active: 'bg-orange-600 text-white', badge: 'bg-orange-600' },
 }
 
 // ── Demo panels ──────────────────────────────────────────────────────────────
@@ -274,6 +290,64 @@ function InterviewDemo() {
   )
 }
 
+function AutomationDemo() {
+  const rows = [
+    { name: 'Emirates NBD', status: 'sent' as const },
+    { name: 'DP World', status: 'sent' as const },
+    { name: 'Careem', status: 'sending' as const },
+    { name: 'Majid Al Futtaim', status: 'queued' as const },
+  ]
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-semibold text-gray-500">Today's queue</span>
+        <span className="text-[10px] text-gray-400">Cap: 5/day · 9am–6pm</span>
+      </div>
+      <div className="space-y-2">
+        {rows.map((row, i) => (
+          <motion.div
+            key={row.name}
+            initial={{ opacity: 0, x: -10 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.25 + 0.2 }}
+            className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-orange-50"
+          >
+            <span className="font-medium text-gray-700">{row.name}</span>
+            {row.status === 'sent' && (
+              <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+                <CheckCircle2 className="w-3 h-3" /> Sent
+              </span>
+            )}
+            {row.status === 'sending' && (
+              <span className="flex items-center gap-1.5 text-orange-600 font-semibold">
+                <motion.div
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                  className="w-1.5 h-1.5 rounded-full bg-orange-500"
+                />
+                Sending…
+              </span>
+            )}
+            {row.status === 'queued' && (
+              <span className="text-gray-400 font-medium">Queued</span>
+            )}
+          </motion.div>
+        ))}
+      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ delay: 1.4 }}
+        className="mt-3 text-[10px] text-gray-500"
+      >
+        Sent from your connected inbox · resume + cover letter attached automatically
+      </motion.div>
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function AIFeatures() {
@@ -291,7 +365,7 @@ export function AIFeatures() {
             Everything powered by AI — built for results
           </h2>
           <p className="text-gray-600 max-w-xl mx-auto">
-            Four AI tools working together so you stop guessing and start landing interviews.
+            Five AI-powered tools working together so you stop guessing and start landing interviews.
           </p>
         </ScrollReveal>
 

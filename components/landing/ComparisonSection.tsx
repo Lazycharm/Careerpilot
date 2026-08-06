@@ -14,6 +14,7 @@ const ROWS = [
   { label: 'Cover letter generator',         diy: false, cp: true },
   { label: 'Job-specific tailoring',         diy: false, cp: true },
   { label: 'Interview prep & AI coaching',   diy: false, cp: true },
+  { label: 'Automated applications to target companies', diy: false, cp: true },
   { label: 'Ready in under 10 minutes',      diy: false, cp: true },
 ]
 

@@ -5,10 +5,30 @@ import { XCircle, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { ScrollReveal, StaggerContainer, StaggerItem } from './ScrollReveal'
 
 const PROBLEMS = [
-  { icon: XCircle, text: 'ATS software rejects 98% of resumes before any human reads them', color: 'text-red-500', bg: 'bg-red-50' },
-  { icon: AlertTriangle, text: 'Generic templates from Word or Canva fail ATS keyword scanning', color: 'text-orange-500', bg: 'bg-orange-50' },
-  { icon: AlertTriangle, text: 'Writing strong bullet points takes hours — most people guess wrong', color: 'text-orange-500', bg: 'bg-orange-50' },
-  { icon: XCircle, text: 'One resume for every job = low response rate, wasted applications', color: 'text-red-500', bg: 'bg-red-50' },
+  {
+    icon: XCircle,
+    text: 'ATS software rejects 98% of resumes before any human reads them',
+    color: 'text-red-500',
+    bg: 'bg-red-50',
+  },
+  {
+    icon: AlertTriangle,
+    text: 'Generic templates from Word or Canva fail ATS keyword scanning',
+    color: 'text-orange-500',
+    bg: 'bg-orange-50',
+  },
+  {
+    icon: AlertTriangle,
+    text: 'Writing strong bullet points takes hours — most people guess wrong',
+    color: 'text-orange-500',
+    bg: 'bg-orange-50',
+  },
+  {
+    icon: XCircle,
+    text: 'One resume for every job = low response rate, wasted applications',
+    color: 'text-red-500',
+    bg: 'bg-red-50',
+  },
 ]
 
 const SOLUTIONS = [
@@ -20,24 +40,23 @@ const SOLUTIONS = [
 
 export function ProblemSection() {
   return (
-    <section className="py-16 sm:py-20 bg-white">
+    <section className="bg-white py-16 sm:py-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-
-          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
-
+        <div className="mx-auto max-w-5xl">
+          <div className="flex flex-col items-start gap-10 lg:flex-row lg:gap-16">
             {/* Left — Problem */}
             <div className="flex-1">
               <ScrollReveal direction="left">
-                <div className="inline-flex items-center gap-2 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 mb-5">
-                  <XCircle className="w-3.5 h-3.5" />
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                  <XCircle className="h-3.5 w-3.5" />
                   The problem
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 leading-tight">
+                <h2 className="mb-4 text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
                   Your resume is getting rejected before anyone reads it
                 </h2>
-                <p className="text-gray-600 text-sm sm:text-base mb-7 leading-relaxed">
-                  Most job seekers spend hours on their CV and still get no responses. The system is rigged — unless your resume speaks ATS language.
+                <p className="mb-7 text-sm leading-relaxed text-gray-600 sm:text-base">
+                  Most job seekers spend hours on their CV and still get no responses. The system is
+                  rigged unless your resume speaks ATS language.
                 </p>
               </ScrollReveal>
 
@@ -46,8 +65,8 @@ export function ProblemSection() {
                   {PROBLEMS.map(({ icon: Icon, text, color, bg }) => (
                     <StaggerItem key={text}>
                       <div className={`flex items-start gap-3 rounded-xl p-3.5 ${bg}`}>
-                        <Icon className={`w-5 h-5 ${color} flex-shrink-0 mt-0.5`} />
-                        <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
+                        <Icon className={`h-5 w-5 ${color} mt-0.5 flex-shrink-0`} />
+                        <p className="text-sm leading-relaxed text-gray-700">{text}</p>
                       </div>
                     </StaggerItem>
                   ))}
@@ -56,7 +75,7 @@ export function ProblemSection() {
             </div>
 
             {/* Divider arrow on desktop */}
-            <div className="hidden lg:flex flex-col items-center justify-center pt-28">
+            <div className="hidden flex-col items-center justify-center pt-28 lg:flex">
               <div className="flex flex-col items-center gap-1">
                 {[0, 1, 2].map((i) => (
                   <motion.div
@@ -65,25 +84,26 @@ export function ProblemSection() {
                     whileInView={{ opacity: 1 }}
                     transition={{ delay: i * 0.2 + 0.5 }}
                     viewport={{ once: true }}
-                    className="w-1.5 h-1.5 rounded-full bg-gradient-to-b from-blue-400 to-violet-400"
+                    className="h-1.5 w-1.5 rounded-full bg-gradient-to-b from-blue-400 to-violet-400"
                   />
                 ))}
-                <div className="text-xs font-bold text-blue-600 rotate-90 mt-2">→</div>
+                <div className="mt-2 rotate-90 text-xs font-bold text-blue-600">→</div>
               </div>
             </div>
 
             {/* Right — Solution */}
             <div className="flex-1">
               <ScrollReveal direction="right">
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 mb-5">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
                   Career Pilot fixes this
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 leading-tight">
-                  AI that writes, optimizes, and coaches — so you stop guessing
+                <h2 className="mb-4 text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
+                  AI that writes, optimizes, and coaches so you stop guessing
                 </h2>
-                <p className="text-gray-600 text-sm sm:text-base mb-7 leading-relaxed">
-                  Career Pilot handles the technical stuff so you can focus on what matters — getting in the room.
+                <p className="mb-7 text-sm leading-relaxed text-gray-600 sm:text-base">
+                  Career Pilot handles the technical stuff so you can focus on what matters getting
+                  in the room.
                 </p>
               </ScrollReveal>
 
@@ -91,9 +111,9 @@ export function ProblemSection() {
                 <div className="space-y-3">
                   {SOLUTIONS.map((text) => (
                     <StaggerItem key={text}>
-                      <div className="flex items-start gap-3 rounded-xl p-3.5 bg-emerald-50 border border-emerald-100">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
+                      <div className="flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50 p-3.5">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" />
+                        <p className="text-sm leading-relaxed text-gray-700">{text}</p>
                       </div>
                     </StaggerItem>
                   ))}
