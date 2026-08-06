@@ -11,7 +11,7 @@ const faqs = [
   },
   {
     question: 'What do I get with a subscription?',
-    answer: 'A subscription unlocks PDF downloads, unlimited AI-powered content generation, premium templates, cover letter creation, and interview prep with readiness scoring. You can explore the builder before subscribing — and unlock everything when you\'re ready to apply.',
+    answer: 'A subscription unlocks PDF downloads, unlimited AI-powered content generation, premium templates, cover letter creation, and interview prep with readiness scoring. You can explore the builder before subscribing, and unlock everything when you\'re ready to apply.',
   },
   {
     question: 'Can I upload my existing resume?',
@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     question: 'What makes Career Pilot different from other resume builders?',
-    answer: 'Career Pilot is built specifically for the UAE and GCC job market. Beyond resume building, we offer AI-powered cover letter generation, interview preparation with readiness scoring, and career guidance — everything you need in one platform.',
+    answer: 'Career Pilot is built specifically for the UAE and GCC job market. Beyond resume building, we offer AI-powered cover letter generation, interview preparation with readiness scoring, and career guidance: everything you need in one platform.',
   },
 ]
 

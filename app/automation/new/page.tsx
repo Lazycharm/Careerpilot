@@ -203,7 +203,7 @@ export default function NewAutomationPage() {
             </CardHeader>
             <CardContent>
               <Input
-                placeholder="e.g., Dubai Tech Companies — June 2026"
+                placeholder="e.g., Dubai Tech Companies, June 2026"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -237,7 +237,7 @@ export default function NewAutomationPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Attachments</CardTitle>
-              <CardDescription>Select a resume and cover letter to include (optional — AI can generate per company)</CardDescription>
+              <CardDescription>Select a resume and cover letter to include (optional, AI can generate per company)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>

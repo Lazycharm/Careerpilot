@@ -71,19 +71,19 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ── 1. HERO — attention + value prop ─────────────────────────── */}
+      {/* ── 1. HERO: attention + value prop ─────────────────────────── */}
       <HeroSection />
 
-      {/* ── 2. SOCIAL PROOF BAND — authority ──────────────────────────── */}
+      {/* ── 2. SOCIAL PROOF BAND: authority ──────────────────────────── */}
       <SocialProofBand />
 
-      {/* ── 3. PROBLEM → SOLUTION — pain recognition ──────────────────── */}
+      {/* ── 3. PROBLEM → SOLUTION: pain recognition ──────────────────── */}
       <ProblemSection />
 
-      {/* ── 4. TEMPLATE SHOWCASE — product demo ───────────────────────── */}
+      {/* ── 4. TEMPLATE SHOWCASE: product demo ───────────────────────── */}
       <TemplateShowcase />
 
-      {/* ── 5. HOW IT WORKS — process clarity ─────────────────────────── */}
+      {/* ── 5. HOW IT WORKS: process clarity ─────────────────────────── */}
       <section id="how-it-works" className="py-16 sm:py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal className="text-center mb-10 sm:mb-14">
@@ -120,7 +120,7 @@ export default function LandingPage() {
                   icon: Target,
                   color: 'emerald',
                   title: 'Download & apply',
-                  desc: 'Download your PDF, generate a matching cover letter, and practice interview questions — all from one dashboard.',
+                  desc: 'Download your PDF, generate a matching cover letter, and practice interview questions, all from one dashboard.',
                 },
               ].map(({ step, icon: Icon, color, title, desc }) => (
                 <StaggerItem key={step}>
@@ -150,13 +150,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 6. AI FEATURES — feature depth ────────────────────────────── */}
+      {/* ── 6. AI FEATURES: feature depth ────────────────────────────── */}
       <AIFeatures />
 
-      {/* ── 7. TESTIMONIALS — social proof ─────────────────────────────── */}
+      {/* ── 7. TESTIMONIALS: social proof ─────────────────────────────── */}
       <Testimonials />
 
-      {/* ── 8. COMPARISON — differentiation ───────────────────────────── */}
+      {/* ── 8. COMPARISON: differentiation ───────────────────────────── */}
       <ComparisonSection />
 
       {/* ── 9. PRICING ─────────────────────────────────────────────────── */}
@@ -238,13 +238,13 @@ export default function LandingPage() {
                 Your next career move starts here
               </h2>
               <p className="text-base sm:text-lg text-white/85 mb-8 leading-relaxed">
-                Stop sending resumes into silence. Let AI build one that actually gets responses — in under 10 minutes.
+                Stop sending resumes into silence. Let AI build one that actually gets responses in under 10 minutes.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/auth/register">
                   <Button size="lg" variant="secondary" className="text-base px-8 min-h-[52px] gap-2 w-full sm:w-auto font-semibold">
                     <Sparkles className="h-5 w-5" />
-                    Build My Resume — Start Now
+                    Build My Resume, Start Now
                   </Button>
                 </Link>
                 <Link href="/templates">

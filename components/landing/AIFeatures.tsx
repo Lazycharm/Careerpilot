@@ -12,9 +12,9 @@ const FEATURES = [
     icon: Sparkles,
     label: 'AI Resume Writer',
     color: 'blue',
-    headline: 'AI writes your bullet points — you just provide the facts',
+    headline: 'AI writes your bullet points. You just provide the facts',
     description:
-      'Tell the AI what you did at each job. It rewrites it with industry keywords, action verbs, and measurable impact — the language that recruiters and ATS systems respond to.',
+      'Tell the AI what you did at each job. It rewrites it with industry keywords, action verbs, and measurable impact: the language that recruiters and ATS systems respond to.',
     bullets: [
       'Generates achievement-focused bullet points',
       'Inserts industry-specific keywords automatically',
@@ -29,7 +29,7 @@ const FEATURES = [
     color: 'yellow',
     headline: 'Score 95%+ on every ATS scan before you even apply',
     description:
-      'Our ATS engine checks your resume against the job description, identifies missing keywords, and tells you exactly what to fix — before you submit.',
+      'Our ATS engine checks your resume against the job description, identifies missing keywords, and tells you exactly what to fix before you submit.',
     bullets: [
       'Real-time ATS compatibility score',
       'Keyword gap analysis vs. job description',
@@ -72,9 +72,9 @@ const FEATURES = [
     icon: Send,
     label: 'Application Automation',
     color: 'orange',
-    headline: 'Applications go out on their own — even while you sleep',
+    headline: 'Applications go out on their own, even while you sleep',
     description:
-      'Connect your email account, pick the companies you want to reach, and Career Pilot sends a tailored application — built from your saved resume and cover letter — on a schedule you set. You stay in control of the daily cap and hours; it handles the sending.',
+      'Connect your email account, pick the companies you want to reach, and Career Pilot sends a tailored application, built from your saved resume and cover letter, on a schedule you set. You stay in control of the daily cap and hours; it handles the sending.',
     bullets: [
       'Sends directly from your own connected email account',
       'You set the target companies, daily cap, and sending hours',
@@ -362,7 +362,7 @@ export function AIFeatures() {
             AI-Powered Platform
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 text-gray-900">
-            Everything powered by AI — built for results
+            Everything powered by AI, built for results
           </h2>
           <p className="text-gray-600 max-w-xl mx-auto">
             Five AI-powered tools working together so you stop guessing and start landing interviews.

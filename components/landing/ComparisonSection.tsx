@@ -90,7 +90,7 @@ export function ComparisonSection() {
                 className="min-h-[52px] px-10 gap-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 shadow-lg shadow-blue-500/25"
               >
                 <Sparkles className="h-5 w-5" />
-                Start Building — Get Hired Faster
+                Start Building, Get Hired Faster
               </Button>
             </Link>
             <p className="text-xs text-gray-400 mt-3">Join 4,200+ UAE professionals who landed interviews with Career Pilot</p>

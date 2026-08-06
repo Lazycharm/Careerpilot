@@ -471,7 +471,7 @@ export default function ResumeEditorPage() {
 
   const handleDownload = async (pdfType: 'a4' | 'long-scroll' = 'a4') => {
     // Phase 1: server-side React-PDF rendering. We always get a real PDF
-    // back from /api/resumes/[id]/export — the html2canvas client fallback
+    // back from /api/resumes/[id]/export: the html2canvas client fallback
     // and the `?type=long-scroll` mode have been removed (long-scroll
     // produced a single oversized page that no ATS could parse).
     try {
@@ -1286,7 +1286,7 @@ export default function ResumeEditorPage() {
               </CardContent>
             </Card>
 
-            {/* Finalize — Additional Sections */}
+            {/* Finalize: Additional Sections */}
             <Card id="section-finalize">
               <CardHeader>
                 <CardTitle className="text-base sm:text-lg">Additional Sections</CardTitle>

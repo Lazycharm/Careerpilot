@@ -178,7 +178,7 @@ export default function DashboardPage() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {isNewUser
-              ? 'Let\'s build something great — create your first resume to get started.'
+              ? 'Let\'s build something great: create your first resume to get started.'
               : 'Pick up where you left off.'}
           </p>
         </div>
@@ -218,7 +218,7 @@ export default function DashboardPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column — main content */}
+          {/* Left column: main content */}
           <div className="lg:col-span-2 space-y-6">
 
             {/* New User Onboarding */}
@@ -374,7 +374,7 @@ export default function DashboardPage() {
 
           </div>
 
-          {/* Right column — sidebar */}
+          {/* Right column: sidebar */}
           <div className="space-y-6">
 
             {/* Quick Actions */}
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                   {stats.subscriptionActive ? (
                     <div className="flex items-center gap-2 text-green-700">
                       <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                      <span className="text-sm font-semibold">Active — Full Access</span>
+                      <span className="text-sm font-semibold">Active (Full Access)</span>
                     </div>
                   ) : (
                     <div className="space-y-3">

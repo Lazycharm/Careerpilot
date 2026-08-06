@@ -1,13 +1,13 @@
 'use client'
 
 /**
- * NotificationBell — drop-in component for the user navbar.
+ * NotificationBell: drop-in component for the user navbar.
  *
  * Polls /api/notifications every 30 s, surfaces the unread count as a badge,
  * and opens a panel with the 10 newest entries. Click an item to mark it
  * read and follow its `href`. "Mark all read" wipes the badge.
  *
- * Stays UI-only — no state library, no portal, plain Tailwind.
+ * Stays UI-only: no state library, no portal, plain Tailwind.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'

@@ -30,7 +30,7 @@ const testimonials = [
     company: 'Abu Dhabi, UAE',
     initials: 'PS',
     color: 'bg-emerald-600',
-    quote: 'I had no idea my old CV was getting filtered by hiring software. Career Pilot fixed the formatting and keywords — got my first call within days.',
+    quote: 'I had no idea my old CV was getting filtered by hiring software. Career Pilot fixed the formatting and keywords, and I got my first call within days.',
     result: 'First callback in 3 days',
     rating: 5,
   },
@@ -51,7 +51,7 @@ const testimonials = [
     initials: 'FZ',
     color: 'bg-pink-600',
     quote: 'As someone who reviews CVs daily, I can say Career Pilot produces resumes that stand out. I used it myself when changing companies.',
-    result: 'Hired — as an HR professional',
+    result: 'Hired as an HR professional',
     rating: 5,
   },
   {
@@ -91,7 +91,7 @@ export function Testimonials() {
             Real results from real job seekers
           </h2>
           <p className="text-gray-600">
-            Professionals across the UAE used Career Pilot to land interviews — and jobs.
+            Professionals across the UAE used Career Pilot to land interviews and jobs.
           </p>
         </ScrollReveal>
 

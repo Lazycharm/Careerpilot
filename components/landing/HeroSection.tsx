@@ -38,7 +38,7 @@ function AnimatedResumeMockup() {
           </div>
         </div>
 
-        {/* Resume preview — top portion */}
+        {/* Resume preview: top portion */}
         <div className="overflow-hidden" style={{ height: '320px', pointerEvents: 'none' }}>
           <ResumePreview data={SAMPLE_RESUME_DATA} templateKey="dubai-classic" />
         </div>
@@ -60,7 +60,7 @@ function AnimatedResumeMockup() {
           </span>
         </div>
         <p className="text-[10px] leading-relaxed text-gray-600">
-          Add metrics to your bullets —{' '}
+          Add metrics to your bullets:{' '}
           <span className="font-medium text-blue-600">45% increase</span> beats "improved
           performance"
         </p>
@@ -131,7 +131,7 @@ export function HeroSection() {
   return (
     <section className="container mx-auto px-4 pb-10 pt-12 sm:px-6 sm:pb-14 sm:pt-16 md:pt-20 lg:px-8">
       <div className="flex flex-col items-center gap-10 lg:flex-row lg:gap-16">
-        {/* Left — text */}
+        {/* Left: text */}
         <motion.div
           className="mx-auto max-w-xl flex-1 text-center lg:mx-0 lg:text-left"
           variants={container}
@@ -205,7 +205,7 @@ export function HeroSection() {
           </motion.div>
         </motion.div>
 
-        {/* Right — animated demo */}
+        {/* Right: animated demo */}
         <div className="w-full flex-1 lg:w-auto lg:flex-none">
           <AnimatedResumeMockup />
         </div>

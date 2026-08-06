@@ -110,7 +110,7 @@ export default function CoverLetterListPage() {
               </div>
               <h3 className="text-lg sm:text-xl font-semibold mb-2 text-center">No cover letters yet</h3>
               <p className="text-sm text-gray-500 mb-6 text-center max-w-xs">
-                AI writes your first cover letter in under 30 seconds — tailored for UAE employers
+                AI writes your first cover letter in under 30 seconds, tailored for UAE employers
               </p>
               <Link href="/cover-letter/new">
                 <Button className="min-h-[44px] gap-2">

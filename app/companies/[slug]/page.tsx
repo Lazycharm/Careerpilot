@@ -3,7 +3,7 @@
  *
  * Public landing per Company (UAE employer). Pulls from the DB and pre-renders
  * at build time. New companies added through admin become available after the
- * next deploy (Next.js ISR could pick them up automatically — Phase 7b).
+ * next deploy (Next.js ISR could pick them up automatically: Phase 7b).
  */
 
 import type { Metadata } from 'next'
@@ -39,11 +39,11 @@ export async function generateMetadata({
     company.description?.slice(0, 160) ??
     `Tailored CV templates and application tips for ${company.name} roles in the UAE.`
   return {
-    title: `${company.name} jobs — CV templates | CareerPilot`,
+    title: `${company.name} jobs: CV templates | CareerPilot`,
     description: desc,
     alternates: { canonical: `${base}/companies/${company.slug}` },
     openGraph: {
-      title: `${company.name} jobs — CV templates`,
+      title: `${company.name} jobs: CV templates`,
       description: desc,
       type: 'website',
       url: `${base}/companies/${company.slug}`,
@@ -72,7 +72,7 @@ export default async function CompanyLanding({ params }: { params: { slug: strin
         kicker={[company.category, company.hqCity, company.hqCountry]
           .filter(Boolean)
           .join(' · ')}
-        heading={`Apply to ${company.name} — UAE CV tips`}
+        heading={`Apply to ${company.name}: UAE CV tips`}
         intro={
           company.description ??
           `Tailor your CV for ${company.name} and increase the chance of a recruiter callback.`
@@ -80,7 +80,7 @@ export default async function CompanyLanding({ params }: { params: { slug: strin
         bodyParagraphs={[
           company.description ??
             `${company.name} is one of the leading employers in its category in the UAE.`,
-          `Recruiters at ${company.name} read CVs in seconds. Tailor your summary to mirror the language of the job ad, lead each role with quantified outcomes, and keep formatting ATS-safe. Our Tailored Pack does this in one click — including a company-specific cover letter.`,
+          `Recruiters at ${company.name} read CVs in seconds. Tailor your summary to mirror the language of the job ad, lead each role with quantified outcomes, and keep formatting ATS-safe. Our Tailored Pack does this in one click, including a company-specific cover letter.`,
           `If you're applying ${company.name === 'Emirates' || company.name === 'Etihad Airways' ? 'as cabin crew or ground operations' : 'across functions'}, the safest filter to clear is the first 8 seconds of recruiter skim. Lead with employer-relevant context, not personal objectives.`,
         ]}
         featuredTemplateKeys={['dubai-classic', 'gulf-modern']}

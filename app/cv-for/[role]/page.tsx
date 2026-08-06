@@ -27,11 +27,11 @@ export function generateMetadata({
   if (!role) return { title: 'Role not found' }
   const base = env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
   return {
-    title: `${role.title} CV Template — UAE | CareerPilot`,
+    title: `${role.title} CV Template (UAE) | CareerPilot`,
     description: role.metaDescription,
     alternates: { canonical: `${base}/cv-for/${role.slug}` },
     openGraph: {
-      title: `${role.title} CV Template — UAE`,
+      title: `${role.title} CV Template (UAE)`,
       description: role.metaDescription,
       type: 'website',
       url: `${base}/cv-for/${role.slug}`,

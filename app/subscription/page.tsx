@@ -269,7 +269,7 @@ export default function SubscriptionPage() {
         {currentPlan && !isActive && (
           <Card className="max-w-md mx-auto">
             <CardHeader>
-              <CardTitle className="text-base">Checkout — {currentPlan.name}</CardTitle>
+              <CardTitle className="text-base">Checkout: {currentPlan.name}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
               {/* Price display */}

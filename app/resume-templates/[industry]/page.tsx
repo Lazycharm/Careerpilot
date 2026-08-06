@@ -29,11 +29,11 @@ export function generateMetadata({
   if (!ind) return { title: 'Industry not found' }
   const base = env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
   return {
-    title: `${ind.name} CV Templates — UAE | CareerPilot`,
+    title: `${ind.name} CV Templates (UAE) | CareerPilot`,
     description: ind.metaDescription,
     alternates: { canonical: `${base}/resume-templates/${ind.slug}` },
     openGraph: {
-      title: `${ind.name} CV Templates — UAE`,
+      title: `${ind.name} CV Templates (UAE)`,
       description: ind.metaDescription,
       type: 'website',
       url: `${base}/resume-templates/${ind.slug}`,

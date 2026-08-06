@@ -36,7 +36,7 @@ const ALL_TEMPLATES: TemplateEntry[] = [
     key: 'sharjah-minimal',
     name: 'Sharjah Minimal',
     category: 'minimal',
-    description: 'Ultra-clean black and white. Zero distractions — just your content. Loved by tech professionals.',
+    description: 'Ultra-clean black and white. Zero distractions, just your content. Loved by tech professionals.',
     isPremium: false,
     supportsPhoto: false,
     atsScore: 100,
@@ -337,7 +337,7 @@ export default function TemplatesPage() {
             Resume Templates
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg">
-            {ALL_TEMPLATES.length} templates — ATS-optimized and built for the UAE market. Pick one, customize it with AI, download in minutes.
+            {ALL_TEMPLATES.length} templates, ATS-optimized and built for the UAE market. Pick one, customize it with AI, download in minutes.
           </p>
         </div>
 
@@ -441,7 +441,7 @@ export default function TemplatesPage() {
         <div className="mt-14 sm:mt-16 py-10 sm:py-12 px-6 sm:px-10 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl text-center border border-blue-100">
           <h2 className="text-xl sm:text-2xl font-bold mb-2">Ready to land your next job?</h2>
           <p className="text-gray-600 text-sm sm:text-base mb-6 max-w-md mx-auto">
-            Pick any template, let AI write your content, download an ATS-optimized PDF — all in under 10 minutes.
+            Pick any template, let AI write your content, download an ATS-optimized PDF, all in under 10 minutes.
           </p>
           <Link href="/auth/register">
             <Button size="lg" className="min-h-[48px] px-8 gap-2">

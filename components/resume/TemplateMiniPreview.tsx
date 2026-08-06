@@ -144,7 +144,7 @@ export function TemplateMiniPreview({ name, category, templateKey, supportsPhoto
           {/* Content */}
           <div className="flex-1 p-1.5 sm:p-2 flex flex-col gap-1.5">
             {isAts ? (
-              // ATS preview — plain text-like blocks
+              // ATS preview: plain text-like blocks
               <>
                 <div className="h-1 w-1/3 rounded-sm bg-gray-800" />
                 <div className="h-0.5 w-full rounded-sm bg-gray-800" />

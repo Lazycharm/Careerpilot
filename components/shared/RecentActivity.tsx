@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * RecentActivity — dashboard widget showing the user's 8 latest activity
+ * RecentActivity: dashboard widget showing the user's 8 latest activity
  * events with human labels. Drops in as a stand-alone card; no required
  * props.
  */

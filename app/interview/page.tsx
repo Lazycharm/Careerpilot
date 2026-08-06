@@ -113,7 +113,7 @@ export default function InterviewListPage() {
               </div>
               <h3 className="text-lg sm:text-xl font-semibold mb-2 text-center">No interview sessions yet</h3>
               <p className="text-sm text-gray-500 mb-6 text-center max-w-xs">
-                Practice with AI-generated questions tailored to your role — get scored and improve with every session
+                Practice with AI-generated questions tailored to your role. Get scored and improve with every session
               </p>
               <Link href="/interview/new">
                 <Button className="min-h-[44px] gap-2">

@@ -198,7 +198,7 @@ export default function CoverLetterViewPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <LayoutTemplate className="h-4 w-4 text-blue-600" />
-                    Template — {TEMPLATES.find((t) => t.key === templateKey)?.name}
+                    Template: {TEMPLATES.find((t) => t.key === templateKey)?.name}
                   </CardTitle>
                   <Button
                     variant="ghost"

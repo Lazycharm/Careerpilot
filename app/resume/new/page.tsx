@@ -124,7 +124,7 @@ export default function NewResumePage() {
                               : 'border-gray-200 hover:border-gray-400 hover:shadow-sm',
                           ].join(' ')}
                         >
-                          {/* Live template thumbnail — same component as the editor */}
+                          {/* Live template thumbnail: same component as the editor */}
                           <div className="w-full overflow-hidden bg-white" style={{ height: '200px' }}>
                             <ResumePreview
                               data={SAMPLE_RESUME_DATA}

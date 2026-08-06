@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * PDFPreviewDialog — renders the live HTML template component directly in a
+ * PDFPreviewDialog: renders the live HTML template component directly in a
  * modal (no API call, no blank-screen loading state). The ResumePreview
  * component uses the same render path as the PDF export, so this is true WYSIWYG.
  */
@@ -50,7 +50,7 @@ export function PDFPreviewDialog({
 
         <CardContent className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="flex flex-col items-center gap-4">
-            {/* Full A4 preview — auto-scales to modal width via ResizeObserver */}
+            {/* Full A4 preview: auto-scales to modal width via ResizeObserver */}
             <div className="w-full max-w-[560px] shadow-xl rounded overflow-hidden border border-gray-200 bg-white">
               <ResumePreview
                 data={resumeData}

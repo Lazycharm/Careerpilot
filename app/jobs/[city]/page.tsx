@@ -29,7 +29,7 @@ export function generateMetadata({
     description: city.metaDescription,
     alternates: { canonical: `${base}/jobs/${city.slug}` },
     openGraph: {
-      title: `${city.name} jobs — CV templates`,
+      title: `${city.name} jobs: CV templates`,
       description: city.metaDescription,
       type: 'website',
       url: `${base}/jobs/${city.slug}`,

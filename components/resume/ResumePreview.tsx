@@ -4,7 +4,7 @@
  * ResumePreview (Phase 2)
  *
  * Renders the actual HTML template component scaled to fit any container,
- * using transform: scale() — identical output to the PDF download.
+ * using transform: scale(), identical output to the PDF download.
  * No more parallel CSS system; the same React component serves both preview
  * and Puppeteer export.
  */
@@ -76,7 +76,7 @@ export function ResumePreview({
 }
 
 /**
- * Mini thumbnail variant — fixed scale for template selector cards.
+ * Mini thumbnail variant: fixed scale for template selector cards.
  */
 export function ResumePreviewThumbnail({
   data,

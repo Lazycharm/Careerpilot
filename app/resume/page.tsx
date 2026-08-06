@@ -110,7 +110,7 @@ export default function ResumeListPage() {
               </div>
               <h3 className="text-lg sm:text-xl font-semibold mb-2 text-center">No resumes yet</h3>
               <p className="text-sm text-gray-500 mb-6 text-center max-w-xs">
-                Build an ATS-optimized resume in minutes — AI writes the content, you choose the style
+                Build an ATS-optimized resume in minutes. AI writes the content, you choose the style
               </p>
               <Link href="/resume/new">
                 <Button className="min-h-[44px] gap-2">

@@ -19,7 +19,7 @@ const PROBLEMS = [
   },
   {
     icon: AlertTriangle,
-    text: 'Writing strong bullet points takes hours — most people guess wrong',
+    text: 'Writing strong bullet points takes hours, and most people guess wrong',
     color: 'text-orange-500',
     bg: 'bg-orange-50',
   },
@@ -44,7 +44,7 @@ export function ProblemSection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="flex flex-col items-start gap-10 lg:flex-row lg:gap-16">
-            {/* Left — Problem */}
+            {/* Left: Problem */}
             <div className="flex-1">
               <ScrollReveal direction="left">
                 <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
@@ -91,7 +91,7 @@ export function ProblemSection() {
               </div>
             </div>
 
-            {/* Right — Solution */}
+            {/* Right: Solution */}
             <div className="flex-1">
               <ScrollReveal direction="right">
                 <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
